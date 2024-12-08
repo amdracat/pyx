@@ -1,2 +1,2 @@
-testC/*.o
-testC/*.exe
+testC/*/*.o
+testC/*/*.exe
