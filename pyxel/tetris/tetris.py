@@ -1,7 +1,7 @@
 import pyxel
 import numpy
 import random
-
+from collections import deque
 
 class Masu:
     BLANK= 0 
@@ -9,6 +9,7 @@ class Masu:
         self.val = val  # マスの種類
         self.role=0
         self.kind=0
+        self.special=0
     def set(self,val):
         self.val = val  # マスの種類
     def get(self):
@@ -21,10 +22,15 @@ class Masu:
         self.val = obj.get()
         self.role = obj.getRole()
         self.kind = obj.getKind()
+        self.special = obj.getSpecial()
     def setKind(self,val):
         self.kind = val  # マスの種類
     def getKind(self):
         return self.kind
+    def setSpecial(self,val):
+        self.special = val  # マスの種類
+    def getSpecial(self):
+        return self.special
 
 
 
@@ -35,7 +41,7 @@ class Block:
     def __init__(self):
         
         self.sharp=random_number = random.randint(0, 6)
-        #self.sharp=5
+        #self.sharp=0
         self.block  = [[Masu(Stage.BLANK) for _ in range(4)] for _ in range(4)]
         self.center=self.CENTER_CENTER
         self.kind=0
@@ -93,6 +99,11 @@ class Block:
             self.block[1][2].set(1)
             self.block[2][1].set(1)
             self.block[2][2].set(1)
+
+            self.block[1][1].setSpecial(1)
+            self.block[1][2].setSpecial(2)
+            self.block[2][1].setSpecial(3)
+            self.block[2][2].setSpecial(4)
             self.center=self.CENTER_CENTER
             self.kind=Stage.BLOCK7
         size = len(self.block)
@@ -101,8 +112,7 @@ class Block:
                 if self.block[i][j].get()==1:
                     self.block[i][j].setKind(self.kind)
         print(f"make block self.sharp :{self.sharp}")
-    def __del__(self):
-        print("delete block\n")    
+
     def get_block(self):
         return self.block
 
@@ -145,11 +155,13 @@ class Block:
         return new_block
 
     def rotate(self):
-        self.block=self.get_rotate_block()
+        if self.kind!=Stage.BLOCK7:
+            self.block=self.get_rotate_block()
         size = len(self.block)
         for i in range(size):
             for j in range(size):
                 self.block[i][j].setRole(90)
+
     
 class Stage:
     # クラス属性として定数を定義
@@ -165,6 +177,7 @@ class Stage:
     BLOCK5 = 6
     BLOCK6 = 7
     BLOCK7 = 8   
+    BLOCKEND = 9  
 
     def __init__(self):
         # 配列を定義し、ステージの端を-1、それ以外の領域を0で初期化
@@ -215,6 +228,38 @@ class Stage:
                 if self.grid[i][j].get() == self.ACTICE:
                     self.grid[i][j].set(self.grid[i][j].getKind())
 
+    def gameover(self):
+        for i in range(self.ROWS):
+            for j in range(self.COLS):
+                if self.grid[i][j].get() != self.BLANK:
+                    self.grid[i][j].set(self.BLOCKEND)
+
+    def clear_full_lines(self):
+        tmp_grid = [[Masu(self.BLANK) for _ in range(self.COLS)] for _ in range(self.ROWS)]
+        new_row = self.ROWS - 1  # 新しいグリッドの行インデックスを設定
+
+        for i in range(self.ROWS - 1, -1, -1):
+            count = 0
+            for j in range(self.COLS):
+                if self.grid[i][j].get() != self.BLANK and self.grid[i][j].get() != self.WALL:
+                    count += 1
+            if count == (self.COLS - 2):
+                # 1行そろったのでコピーしない
+                print(f"delete {count} {i}")
+            else:
+                # tmp_gridにself.gridをコピー
+                for j in range(self.COLS):
+                    tmp_grid[new_row][j].setObj(self.grid[i][j])
+                new_row -= 1
+
+
+        # ステージの端を-1で初期化
+        for i in range(self.ROWS):
+            tmp_grid[i][0].set(self.WALL)         # 左端
+            tmp_grid[i][self.COLS-1].set(self.WALL)  # 右端
+
+        self.grid = tmp_grid
+
 
 
 
@@ -227,12 +272,22 @@ class Game:
     LAST_MOVABLE_COUNT_MAX=2
     def __init__(self):
         self.stage =Stage()
+        self.block_queue = deque()
         self.x=self.X_POS_INIT
         self.y=self.Y_POS_INIT
         self.count=0
         self.movble_count=0
+        self.isGameOver=False
+        self.left_key_counter = 0
+        self.right_key_counter = 0
+        self.key_delay = 10  # 最初の遅延
+        self.key_repeat = 3  # 連続入力の間隔
         pyxel.init(220, 240, title="Hello Pyxel")
-        self.activeBlock = Block()
+        self.block_queue.append(Block())
+        self.block_queue.append(Block())
+        self.block_queue.append(Block())
+        self.activeBlock = self.block_queue.popleft()
+        #self.activeBlock = Block()
         pyxel.load("tetris_resource.pyxres")
         pyxel.run(self.update, self.draw)
 
@@ -240,27 +295,48 @@ class Game:
         if pyxel.btnp(pyxel.KEY_Q):
             pyxel.quit()
         if pyxel.btnp(pyxel.KEY_R):
+            if self.isGameOver:
+                self.x=self.X_POS_INIT
+                self.y=self.Y_POS_INIT
+                self.count=0
+                self.movble_count=0
+                self.isGameOver=False
+                self.left_key_counter = 0
+                self.right_key_counter = 0
+                del(self.stage)
+                self.stage =Stage()
+
+                return
             if self.stage.can_plot_block(self.x,self.y, self.activeBlock.get_rotate_block()):
                 self.activeBlock.rotate()
-        
+        if self.isGameOver:
+            return
         self.count=self.count+1
-        if self.count == self.FPS :
+        if self.count == self.FPS:
             self.count = 0
             self.y = self.y + 1
 
         if pyxel.btn(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT):
-            if self.stage.can_plot_block(self.x -1,self.y,self.activeBlock.get_block()):
-                self.x = self.x -1
-                if self.stage.can_plot_block(self.x,self.y+1,self.activeBlock.get_block()) == False and self.movble_count < self.LAST_MOVABLE_COUNT_MAX and self.count > 20:
-                    self.count = 0
-                    self.movble_count = self.movble_count + 1
+            self.left_key_counter += 1
+            if self.left_key_counter == 1 or (self.left_key_counter > self.key_delay )and ((self.left_key_counter - self.key_delay) % self.key_repeat == 0):
+                if self.stage.can_plot_block(self.x -1,self.y,self.activeBlock.get_block()):
+                    self.x = self.x -1
+                    if self.stage.can_plot_block(self.x,self.y+1,self.activeBlock.get_block()) == False and self.movble_count < self.LAST_MOVABLE_COUNT_MAX and self.count > 20:
+                        self.count = 0
+                        self.movble_count = self.movble_count + 1
+        else:
+            self.left_key_counter = 0  # キーが離されたらリセット
 
         if pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT):
-            if self.stage.can_plot_block(self.x +1,self.y,self.activeBlock.get_block()):
-                self.x = self.x + 1
-                if self.stage.can_plot_block(self.x,self.y+1,self.activeBlock.get_block()) == False and self.movble_count < self.LAST_MOVABLE_COUNT_MAX and self.count > 20:
-                    self.count = 0
-                    self.movble_count = self.movble_count + 1
+            self.right_key_counter += 1
+            if self.right_key_counter == 1 or self.right_key_counter > self.key_delay and (self.right_key_counter - self.key_delay) % self.key_repeat == 0:
+                if self.stage.can_plot_block(self.x +1,self.y,self.activeBlock.get_block()):
+                    self.x = self.x + 1
+                    if self.stage.can_plot_block(self.x,self.y+1,self.activeBlock.get_block()) == False and self.movble_count < self.LAST_MOVABLE_COUNT_MAX and self.count > 20:
+                        self.count = 0
+                        self.movble_count = self.movble_count + 1
+        else:
+            self.right_key_counter = 0  # キーが離されたらリセット 
         #if pyxel.btn(pyxel.KEY_UP) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_UP):
         #    self.y -= PLAYER_SPEED
         if pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN):
@@ -277,41 +353,67 @@ class Game:
             self.stage.plot_block(self.x,self.y,self.activeBlock.get_block())
         else:
             self.stage.fix_activeBlock()
+            self.stage.clear_full_lines()
             self.x=self.X_POS_INIT
             self.y=self.Y_POS_INIT
             self.movble_count=0
-            del(self.activeBlock)
-            self.activeBlock = Block()
+            self.block_queue.append(Block())
+            self.activeBlock = self.block_queue.popleft()
+            if self.stage.can_plot_block(self.x,self.y,self.activeBlock.get_block())==False:
+                print("GameOver")
+                self.stage.gameover()
+                self.isGameOver=True
 
-    def draw_block(self,type_val2,i,j):
-        type_val=type_val2.get()
+
+    def draw_block(self,block,i,j):
+        type_val=block.get()
         if type_val == Stage.ACTICE:
-            type_val = type_val2.getKind()
+            type_val = block.getKind()
         
         if type_val == Stage.WALL:
             pyxel.blt(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 0,0,0,10, 10,100)
-        elif  type_val== Stage.BLOCK1:
-            pyxel.blt(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 0,0,10,10, 10,100)
-        elif  type_val == Stage.BLOCK2:
-            pyxel.blt(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 0,0,20,10, 10,100)
-        elif  type_val == Stage.BLOCK3:
-            pyxel.blt(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 0,0,30,10, 10,100)
-        elif  type_val == Stage.BLOCK4:
-            pyxel.blt(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 0,0,40,10, 10,100)
-        elif  type_val == Stage.BLOCK5:
-            pyxel.blt(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 0,0,50,10, 10,100)
-        elif  type_val== Stage.BLOCK6:
-            pyxel.blt(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 0,0,60,10, 10,100)
-        elif  type_val == Stage.BLOCK7:
-            pyxel.blt(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 0,0,70,10, 10,100)
+        elif type_val == Stage.BLOCK7:
+            if block.getSpecial()==1:
+                pyxel.blt(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 0,0,(block.getRole()//90)*20 + 100,10, 10,100)
+            elif block.getSpecial()==2:
+                pyxel.blt(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 0,10,(block.getRole()//90)*20 + 100,10, 10,100)
+            elif block.getSpecial()==3:
+                pyxel.blt(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 0,0,(block.getRole()//90)*20 + 110,10, 10,100)
+            elif block.getSpecial()==4:
+                pyxel.blt(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 0,10,(block.getRole()//90)*20 + 110,10, 10,100)
+        elif type_val == Stage.BLOCKEND:
+            pyxel.blt(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 0,10,0,10, 10,100)
+        else:
+            pyxel.blt(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 0,(block.getRole()//90)*10,(type_val-Stage.BLOCK1)*10+10,10, 10,100)
+
+
+    def draw_next_two_blocks(self):
+        next_block1 = self.block_queue[0].get_block()  # キューの先頭要素
+        next_block2 = self.block_queue[1].get_block()  # キューの2番目の要素
+
+        # 1つ目の次のブロックを描画
+        for i in range(4):
+            for j in range(4):
+                if next_block1[j][i].get() == 1:
+                    pyxel.rect(i * 10 + 170, j * 10 + 20, 8, 8, 9)
+
+        # 2つ目の次のブロックを描画
+        for i in range(4):
+            for j in range(4):
+                if next_block2[j][i].get() == 1:
+                    pyxel.rect(i * 10 + 170, j * 10 + 60, 8, 8, 10)
 
     def draw(self):
         pyxel.cls(0)
-        #pyxel.text(55, 41, "Hello, Pyxel!", pyxel.frame_count % 16)
+
         for i in range(Stage.ROWS):
             for j in range(Stage.COLS):
+                #Grid
                 pyxel.rectb(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 10, 10, 7)
                 self.draw_block(self.stage.get_stage_block(i,j),i,j)
 
-
+        if self.isGameOver:
+            pyxel.text(55, 41, "Game Over!!", pyxel.frame_count % 16)
+        
+        self.draw_next_two_blocks()
 Game()
