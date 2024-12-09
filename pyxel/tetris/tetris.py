@@ -5,21 +5,26 @@ import random
 
 class Masu:
     BLANK= 0 
-    def __init__(self, kind):
-        self.kind = kind  # マスの種類
+    def __init__(self, val):
+        self.val = val  # マスの種類
         self.role=0
+        self.kind=0
     def set(self,val):
-        self.kind = val  # マスの種類
+        self.val = val  # マスの種類
     def get(self):
-        return self.kind
+        return self.val
     def setRole(self,val):
         self.role = (self.role + val)%360
     def getRole(self):
         return self.role
     def setObj(self, obj):
-        self.kind = obj.get()
+        self.val = obj.get()
         self.role = obj.getRole()
-
+        self.kind = obj.getKind()
+    def setKind(self,val):
+        self.kind = val  # マスの種類
+    def getKind(self):
+        return self.kind
 
 
 
@@ -33,6 +38,7 @@ class Block:
         #self.sharp=5
         self.block  = [[Masu(Stage.BLANK) for _ in range(4)] for _ in range(4)]
         self.center=self.CENTER_CENTER
+        self.kind=0
         if self.sharp == 0:
             # I
             self.block[0][1].set(1) 
@@ -40,6 +46,7 @@ class Block:
             self.block[2][1].set(1) 
             self.block[3][1].set(1) 
             self.center=self.CENTER_CENTER
+            self.kind=Stage.BLOCK1
         elif  self.sharp == 1:
             # Z
             self.block[2][0].set(1) 
@@ -47,6 +54,7 @@ class Block:
             self.block[3][1].set(1) 
             self.block[3][2].set(1)
             self.center=self.CENTER_ZURE
+            self.kind=Stage.BLOCK2
         elif  self.sharp == 2:
             #S
             self.block[3][0].set(1) 
@@ -54,6 +62,7 @@ class Block:
             self.block[2][1].set(1) 
             self.block[2][2].set(1)
             self.center=self.CENTER_ZURE
+            self.kind=Stage.BLOCK3
         elif  self.sharp == 3:
             #」
             self.block[1][1].set(1) 
@@ -61,6 +70,7 @@ class Block:
             self.block[3][1].set(1) 
             self.block[3][0].set(1)
             self.center=self.CENTER_ZURE
+            self.kind=Stage.BLOCK4
         elif  self.sharp == 4:
             #L
             self.block[1][1].set(1) 
@@ -68,6 +78,7 @@ class Block:
             self.block[3][1].set(1) 
             self.block[3][2].set(1)
             self.center=self.CENTER_ZURE
+            self.kind=Stage.BLOCK5
         elif  self.sharp == 5:
             # 山
             self.block[2][0].set(1) 
@@ -75,6 +86,7 @@ class Block:
             self.block[2][2].set(1) 
             self.block[1][1].set(1)
             self.center=self.CENTER_ZURE
+            self.kind=Stage.BLOCK6
         elif  self.sharp == 6:
             #□
             self.block[1][1].set(1)
@@ -82,14 +94,17 @@ class Block:
             self.block[2][1].set(1)
             self.block[2][2].set(1)
             self.center=self.CENTER_CENTER
-
+            self.kind=Stage.BLOCK7
+        size = len(self.block)
+        for i in range(size):
+            for j in range(size):
+                if self.block[i][j].get()==1:
+                    self.block[i][j].setKind(self.kind)
         print(f"make block self.sharp :{self.sharp}")
     def __del__(self):
         print("delete block\n")    
     def get_block(self):
         return self.block
-    def get_sharp(self):
-        return self.sharp
 
     # ブロックを90度回転させる関数4×4中心
     def rotate_90_degrees(self,matrix):
@@ -163,13 +178,9 @@ class Stage:
             #self.grid[0][j] = self.WALL         # 上端
             self.grid[self.ROWS-1][j].set(self.WALL)  # 下端
             
-        # ステージ上部に左右3つずつ壁(-1)を配置し、その間を0に設定
-        for j in range(3):
-            self.grid[0][j].set(self.WALL)         # 左側の壁
-            self.grid[0][self.COLS-1-j].set(self.WALL) # 右側の壁
     
     def get_stage_block(self,row,col):
-            return self.grid[row][col].get()
+        return self.grid[row][col]
     def plot_block(self, x, y, block):
         for i in range(4):
             for j in range(4):
@@ -198,11 +209,11 @@ class Stage:
         
         return ret
 
-    def fix_activeBlock(self,type):
+    def fix_activeBlock(self):
         for i in range(self.ROWS):
             for j in range(self.COLS):
                 if self.grid[i][j].get() == self.ACTICE:
-                    self.grid[i][j].set(type)
+                    self.grid[i][j].set(self.grid[i][j].getKind())
 
 
 
@@ -265,17 +276,18 @@ class Game:
             self.stage.clear_active_block()
             self.stage.plot_block(self.x,self.y,self.activeBlock.get_block())
         else:
-            self.stage.fix_activeBlock(self.conv_sharp2block( self.activeBlock.get_sharp()))
+            self.stage.fix_activeBlock()
             self.x=self.X_POS_INIT
             self.y=self.Y_POS_INIT
             self.movble_count=0
             del(self.activeBlock)
             self.activeBlock = Block()
 
-    def conv_sharp2block(self,sharp_val):
-        return sharp_val + 2
-
-    def draw_block(self,type_val,i,j):
+    def draw_block(self,type_val2,i,j):
+        type_val=type_val2.get()
+        if type_val == Stage.ACTICE:
+            type_val = type_val2.getKind()
+        
         if type_val == Stage.WALL:
             pyxel.blt(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 0,0,0,10, 10,100)
         elif  type_val== Stage.BLOCK1:
@@ -299,10 +311,7 @@ class Game:
         for i in range(Stage.ROWS):
             for j in range(Stage.COLS):
                 pyxel.rectb(j*10+self.X_OFFSET, i*10+self.Y_OFFSET, 10, 10, 7)
-                if  self.stage.get_stage_block(i,j) == Stage.ACTICE:
-                    self.draw_block(self.conv_sharp2block( self.activeBlock.get_sharp()),i,j)
-                else:
-                    self.draw_block(self.stage.get_stage_block(i,j),i,j)
+                self.draw_block(self.stage.get_stage_block(i,j),i,j)
 
 
 Game()
