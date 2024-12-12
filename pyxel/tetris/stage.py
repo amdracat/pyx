@@ -81,7 +81,7 @@ class Stage:
                 else:
                     if ( (x + i) == 0 or (x + i) >= (self.COLS-1) ) and  block[3 - j][i].get() == 1:
                         ret = False
-                    if  self.ROWS <= (y - j):
+                    if  self.ROWS <= (y - j) and  block[3 - j][i].get() == 1:
                         ret = False
         #ret = ret and (count !=0)
         return ret
