@@ -110,6 +110,7 @@ class Game:
     # 30fpsでpyxelにコールされる状態更新処理
     #======================================
     def update(self):
+        enableFall=True
         #----------------------
         # タイマー
         #----------------------
@@ -182,12 +183,14 @@ class Game:
                     break
             if (tempy -1) != self.y:
                 self.y=tempy-1
+                enableFall=False
 
         #  *** 下キー ***
         if pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN):
             if self.stage.can_plot_block(self.x,self.y+1,self.activeBlock.get_block()):
                 self.count = 0
                 self.block_fall()
+                enableFall=False
 
         #----------------------
         # GameOver スキップ
@@ -198,10 +201,11 @@ class Game:
         #----------------------
         # 自然落下
         #----------------------
-        self.count=self.count+1
-        if self.count >= self.block_fall_speed:
-            self.count = 0
-            self.block_fall()
+        if enableFall:
+            self.count=self.count+1
+            if self.count >= self.block_fall_speed:
+                self.count = 0
+                self.block_fall()
 
         #----------------------
         # 設置判定

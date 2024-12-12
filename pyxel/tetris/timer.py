@@ -1,9 +1,3 @@
-import numpy
-
-
-
-
-
 
 class Timer:
     def __init__(self,interval_ms):

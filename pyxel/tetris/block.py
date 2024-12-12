@@ -3,15 +3,16 @@ import random
 from blockconst import BlockConst
 from masu import Masu
 
-
-
-
 class Block:
     CENTER_CENTER=0
     CENTER_ZURE=1
-    def __init__(self):
+    def __init__(self, sharp=None):
+        if sharp is None:
+            self.sharp = random.randint(0, 6)
+        else:
+            self.sharp = sharp
         
-        self.sharp=random_number = random.randint(0, 6)
+        #self.sharp=random_number = random.randint(0, 6)
         #self.sharp=0
         self.block  = [[Masu(BlockConst.BLANK) for _ in range(4)] for _ in range(4)]
         self.center=self.CENTER_CENTER
