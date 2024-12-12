@@ -1,2 +1,3 @@
 testC/*/*.o
 testC/*/*.exe
+*.pyc
