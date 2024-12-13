@@ -14,7 +14,7 @@ from musicMainGame import MusicMainGame
 from keyRepeat import KeyRepeat
 from ctrlParam import CtrlParam
 import math
-
+from score import Score
 
 class StateMainGame:
     X_OFFSET=10
@@ -56,12 +56,12 @@ class StateMainGame:
         self.waitUserInput=False
         self.selectContinue=True
         self.particles = []
-        self.music.music_stop()
-        self.music.music_start()
+
 
 
     def initialize_once(self):
         self.visible=False
+        self.score_manager = Score()
         self.leftKey=KeyRepeat(
             key1=pyxel.KEY_LEFT,
             key2=pyxel.GAMEPAD1_BUTTON_DPAD_LEFT,
@@ -81,6 +81,12 @@ class StateMainGame:
     #======================================
     def set_is_visible(self,visible):
         self.visible=visible
+        if self.visible:
+            self.initialize_game(False)
+        else:
+            self.initialize_game(False)
+    def is_visible(self):
+        return self.visible
 
     #======================================
     # 30fpsでpyxelにコールされる状態更新処理
@@ -89,14 +95,21 @@ class StateMainGame:
         if not self.visible:
             return
         #  *** 中断 ***
-        if pyxel.btnp(pyxel.KEY_A):
-               if not self.waitUserInput:
-                   self.waitUserInput=True
-                   self.music.music_stop()
-               else:
-                   if self.selectContinue:
-                       self.waitUserInput=False
-                       self.music.music_start()
+        if pyxel.btnp(pyxel.KEY_SPACE):
+            if not self.waitUserInput:
+                self.waitUserInput=True
+                self.music.music_stop()
+
+        if pyxel.btnp(pyxel.KEY_RETURN):
+            if self.waitUserInput:
+                if self.selectContinue:
+                   self.waitUserInput=False
+                   self.music.music_start()
+                   if self.isGameOver:
+                    self.initialize_game(False)
+                else:
+                    self.music.music_start()
+                    self.set_is_visible(False)
 
         if  self.waitUserInput:
             if pyxel.btnp(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT):
@@ -142,12 +155,14 @@ class StateMainGame:
         if self.canHold:
             self.canHold=False
             if self.holdBlock is None:
+                self.activeBlock.rotate_to_0()
                 self.holdBlock = copy.deepcopy(self.activeBlock)
                 del(self.activeBlock)
                 self.block_queue.append(Block())
                 self.activeBlock = self.block_queue.popleft()
             else:
                 #del(self.activeBlock)
+                self.activeBlock.rotate_to_0()
                 temp = copy.deepcopy(self.activeBlock)
                 self.activeBlock=copy.deepcopy(self.holdBlock)
                 self.holdBlock= copy.deepcopy(temp)
@@ -171,10 +186,12 @@ class StateMainGame:
         if pyxel.btnp(pyxel.KEY_S):
             self.det_key_debug()
 
-        if pyxel.btnp(pyxel.KEY_R):
+        if pyxel.btnp(pyxel.KEY_RETURN):
             if self.isGameOver:
+                self.music.music_start()
                 self.initialize_game(False)
-                return
+
+        if pyxel.btnp(pyxel.KEY_R):
             self.det_key_rotate()
 
         self.leftKey.update()
@@ -258,6 +275,7 @@ class StateMainGame:
                 #print("GameOver")
                 #self.activeBlock.print_state()
                 #self.stage.print_grid()
+                self.score_manager.set_score(self.score)
                 self.music.music_stop()
                 self.music.sound_gameover()
                 self.stage.gameover()
@@ -299,7 +317,10 @@ class StateMainGame:
             return
         self.draw_main_game()
         if self.waitUserInput:
-            pyxel.text(55, 41, "Continue?", pyxel.frame_count % 16)
+            if self.isGameOver:
+                pyxel.text(55, 41, "Continue?", 7)
+            else:
+                pyxel.text(55, 41, "Continue?", pyxel.frame_count % 16)
             if self.selectContinue:
                 pyxel.rectb(52, 49, 20, 10, 1)
             else:
@@ -318,7 +339,7 @@ class StateMainGame:
                 self.draw_block(self.stage.get_stage_block(i,j),i,j)
 
         if self.isGameOver:
-            pyxel.text(55, 41, "Game Over!!", pyxel.frame_count % 16)
+            pyxel.text(55, 100, "Game Over!!", pyxel.frame_count % 16)
         
         if not self.isGameOver:
             self.draw_next_two_blocks()
