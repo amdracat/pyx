@@ -93,32 +93,39 @@ class StateMainGame:
         if not self.visible:
             return
         #  *** 中断 ***
-        if pyxel.btnp(pyxel.KEY_SPACE):
+        if pyxel.btnp(pyxel.KEY_SPACE) or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and ( 185 < pyxel.mouse_x < 205 and  205 < pyxel.mouse_y < 235)):
             if not self.waitUserInput:
                 self.waitUserInput=True
                 self.music.music_stop()
 
-        if pyxel.btnp(pyxel.KEY_RETURN):
+        if pyxel.btnp(pyxel.KEY_RETURN) or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and ( 155 < pyxel.mouse_x < 185 and  175 < pyxel.mouse_y < 205)):
             if self.waitUserInput:
                 if self.selectContinue:
-                   self.waitUserInput=False
-                   self.music.music_start()
-                   if self.isGameOver:
-                    self.initialize_game(False)
+                    self.waitUserInput=False
+                    self.music.music_start()
+                    if self.isGameOver:
+                        self.initialize_game(False)
                 else:
                     self.music.music_start()
                     self.set_is_visible(False)
+            else:
+                if ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and ( 155 < pyxel.mouse_x < 185 and  175 < pyxel.mouse_y < 205)):
+                    self.activeBlock.rotate()
 
         if  self.waitUserInput:
-            if pyxel.btnp(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT):
+            if pyxel.btnp(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT) or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and (  185 < pyxel.mouse_x < 215 and  175 < pyxel.mouse_y < 205)):
                 self.selectContinue=False
-            if pyxel.btnp(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT):
+            if pyxel.btnp(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT) or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and (  125 < pyxel.mouse_x < 155 and  175 < pyxel.mouse_y < 205)):
                 self.selectContinue=True       
 
         if not self.waitUserInput:
             self.cycle_start()
             self.update_key()
             self.action()
+        
+
+
+
 
     #======================================
     # キー動作定義
@@ -203,6 +210,28 @@ class StateMainGame:
 
         if pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN):
             self.det_key_down()
+
+
+        if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
+            if 125 < pyxel.mouse_x < 155 and  175 < pyxel.mouse_y < 205:
+                    self.det_key_left()
+            elif 185 < pyxel.mouse_x < 215 and  175 < pyxel.mouse_y < 205:
+                    self.det_key_right()
+            elif 155 < pyxel.mouse_x < 185 and  145 < pyxel.mouse_y < 175:
+                    self.det_key_up()
+            elif 155 < pyxel.mouse_x < 185 and  205 < pyxel.mouse_y < 235:
+                    self.det_key_down()
+            elif 185 < pyxel.mouse_x < 215 and  145 < pyxel.mouse_y < 175:
+                    self.det_key_hold()
+            #elif 155 < pyxel.mouse_x < 185 and  175 < pyxel.mouse_y < 205:
+            #        print("rotate")
+            #        #self.det_key_rotate()
+            elif 185 < pyxel.mouse_x < 205 and  205 < pyxel.mouse_y < 235:
+                    if not self.waitUserInput:
+                        self.waitUserInput=True
+                        self.music.music_stop()
+
+
 
     #======================================
     # 更新前準備
@@ -322,11 +351,32 @@ class StateMainGame:
             else:
                 pyxel.text(55, 41, "Continue?", pyxel.frame_count % 16)
             if self.selectContinue:
-                pyxel.rectb(52, 49, 20, 10, 1)
+                #pyxel.rectb(52, 49, 20, 10, 1)
+                yesCol=7
+                noCol=1
             else:
-                pyxel.rectb(77, 49,  20, 10, 1)
-            pyxel.text(55,51, "YES!", 7)
-            pyxel.text(80,51, "NO..", 7)
+                #pyxel.rectb(77, 49,  20, 10, 1)
+                yesCol=1
+                noCol=7
+            pyxel.text(55,51, "YES!", yesCol)
+            pyxel.text(80,51, "NO..", noCol)
+        #pyxel.rectb(150, 200, 30, 30, 1)
+        #pyxel.rectb(155, 145, 30, 90, 1)
+        #pyxel.rectb(125, 175, 90, 30, 1)
+        #ホールド
+        pyxel.rectb(185, 145, 30, 30, 1)
+        #回転
+        pyxel.rectb(155, 175, 30, 30, 1)
+        #右キー
+        pyxel.rectb(185, 175, 30, 30, 1)
+        #左キー
+        pyxel.rectb(125, 175, 30, 30, 1)
+        #上キー
+        pyxel.rectb(155, 145, 30, 30, 1)
+        #下キー
+        pyxel.rectb(155, 205, 30, 30, 1)
+        #中断
+        pyxel.rectb(185, 205, 30, 30, 1)
 
     #---------------------
     # ステージ描画
@@ -402,12 +452,12 @@ class StateMainGame:
     #---------------------
     def draw_score(self):
         x_offset = 162
-        y_offset=135
+        y_offset=128
         pyxel.text(x_offset+3, y_offset, "SCORE", 7)
         score_text = f"{self.score}"
         text_width = pyxel.FONT_WIDTH * len(score_text)
 
-        pyxel.text(x_offset - text_width+30, y_offset+20,score_text, pyxel.COLOR_WHITE)
+        pyxel.text(x_offset - text_width+30, y_offset+10,score_text, pyxel.COLOR_WHITE)
 
     #---------------------
     # パーティクル１
