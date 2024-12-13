@@ -14,6 +14,7 @@ from keyRepeat import KeyRepeat
 from ctrlParam import CtrlParam
 import math
 from score import Score
+from crossKey import CrossKey
 
 class StateMainGame:
     X_OFFSET=10
@@ -28,6 +29,7 @@ class StateMainGame:
         self.initialize_game(True)
         self.initialize_once()   
         self.param=CtrlParam()
+        self.cross=CrossKey()
 
     def initialize_game(self,isFisrt):
         if isFisrt != True:
@@ -50,7 +52,6 @@ class StateMainGame:
         self.holdBlock = None
         self.canHold=True
         self.timer=Timer(33)
-        self.isTouchFloor=False
         self.enableFall=True
         self.waitUserInput=False
         self.selectContinue=True
@@ -92,12 +93,12 @@ class StateMainGame:
         if not self.visible:
             return
         #  *** 中断 ***
-        if pyxel.btnp(pyxel.KEY_SPACE) or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and ( 185 < pyxel.mouse_x < 205 and  205 < pyxel.mouse_y < 235)):
+        if pyxel.btnp(pyxel.KEY_SPACE) or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and self.det_stop_tochu()):
             if not self.waitUserInput:
                 self.waitUserInput=True
                 self.music.music_stop()
 
-        if pyxel.btnp(pyxel.KEY_RETURN) or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and ( 155 < pyxel.mouse_x < 185 and  175 < pyxel.mouse_y < 205)):
+        if pyxel.btnp(pyxel.KEY_RETURN) or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and  self.cross.mouseCenter()):
             if self.waitUserInput:
                 if self.selectContinue:
                     self.waitUserInput=False
@@ -108,13 +109,13 @@ class StateMainGame:
                     self.music.music_start()
                     self.set_is_visible(False)
             else:
-                if ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and ( 155 < pyxel.mouse_x < 185 and  175 < pyxel.mouse_y < 205)):
+                if ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and  self.cross.mouseCenter()):
                     self.activeBlock.rotate()
 
         if  self.waitUserInput:
-            if pyxel.btnp(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT) or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and (  185 < pyxel.mouse_x < 215 and  175 < pyxel.mouse_y < 205)):
+            if pyxel.btnp(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT) or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and  self.cross.mouseRight()):
                 self.selectContinue=False
-            if pyxel.btnp(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT) or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and (  125 < pyxel.mouse_x < 155 and  175 < pyxel.mouse_y < 205)):
+            if pyxel.btnp(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT) or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and self.cross.mouseLeft()):
                 self.selectContinue=True       
 
         if not self.waitUserInput:
@@ -212,26 +213,29 @@ class StateMainGame:
 
 
         if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
-            if 125 < pyxel.mouse_x < 155 and  175 < pyxel.mouse_y < 205:
+            if self.cross.mouseLeft():
                     self.det_key_left()
-            elif 185 < pyxel.mouse_x < 215 and  175 < pyxel.mouse_y < 205:
+            elif self.cross.mouseRight():
                     self.det_key_right()
-            elif 155 < pyxel.mouse_x < 185 and  145 < pyxel.mouse_y < 175:
+            elif self.cross.mouseUp():
                     self.det_key_up()
-            elif 155 < pyxel.mouse_x < 185 and  205 < pyxel.mouse_y < 235:
+            elif self.cross.mouseDown():
                     self.det_key_down()
-            elif 185 < pyxel.mouse_x < 215 and  145 < pyxel.mouse_y < 175:
+            elif self.det_hold_tochu():
                     self.det_key_hold()
             #elif 155 < pyxel.mouse_x < 185 and  175 < pyxel.mouse_y < 205:
             #        print("rotate")
             #        #self.det_key_rotate()
-            elif 185 < pyxel.mouse_x < 205 and  205 < pyxel.mouse_y < 235:
+            elif self.det_stop_tochu():
                     if not self.waitUserInput:
                         self.waitUserInput=True
                         self.music.music_stop()
 
 
-
+    def det_hold_tochu(self):
+        return (152 < pyxel.mouse_x < 194 and  80 < pyxel.mouse_y < 122)
+    def det_stop_tochu(self):
+        return (10 < pyxel.mouse_x < 130 and  10 < pyxel.mouse_y < 230)
     #======================================
     # 更新前準備
     #======================================
@@ -322,16 +326,11 @@ class StateMainGame:
             self.timer.cancel_timer()
             self.y = self.y + 1
             isFall=True
-            self.isTouchFloor=False
             #y+1によって着地したか？(+2で判定)
             if self.stage.can_plot_block(self.x,baseY +2,self.activeBlock.get_block()) == False:
-                self.isTouchFloor = True
                 if not self.timer.isTimerRunning() and not self.timer.isTimerComplate() :
                     # 着地後、何等か操作があれば600msは操作可能
-                    self.timer.restart(700)
-                    
-        else:
-            self.isTouchFloor = True
+                    self.timer.restart(700)  
         
         if isFall==False and not self.timer.isTimerRunning():
             self.y = self.y + 1
@@ -362,20 +361,19 @@ class StateMainGame:
         #pyxel.rectb(150, 200, 30, 30, 1)
         #pyxel.rectb(155, 145, 30, 90, 1)
         #pyxel.rectb(125, 175, 90, 30, 1)
-        #ホールド
-        pyxel.rectb(185, 145, 30, 30, 1)
+
         #回転
-        pyxel.rectb(155, 175, 30, 30, 1)
+        #pyxel.rectb(160, 180, 30, 30, 1)
         #右キー
-        pyxel.rectb(185, 175, 30, 30, 1)
+        #pyxel.rectb(190, 180, 30, 30, 1)
         #左キー
-        pyxel.rectb(125, 175, 30, 30, 1)
+        #pyxel.rectb(130, 180, 30, 30, 1)
         #上キー
-        pyxel.rectb(155, 145, 30, 30, 1)
+        #pyxel.rectb(160, 150, 30, 30, 1)
         #下キー
-        pyxel.rectb(155, 205, 30, 30, 1)
-        #中断
-        pyxel.rectb(185, 205, 30, 30, 1)
+        #pyxel.rectb(160, 210, 30, 30, 1)
+        
+        self.cross.draw()
 
     #---------------------
     # ステージ描画

@@ -1,6 +1,6 @@
 import pyxel
 from score import Score
-
+from crossKey import CrossKey
 class StateScore:
     def __init__(self):
         self.visible=False
@@ -8,6 +8,7 @@ class StateScore:
         self.score_manager = Score()
         self.del_check=False
         self.del_done=False
+        self.cross=CrossKey()
 
     def set_is_visible(self,visible):
         self.visible=visible
@@ -20,7 +21,7 @@ class StateScore:
     def update(self):
         if not self.visible:
             return
-        if pyxel.btnp(pyxel.KEY_RETURN):
+        if pyxel.btnp(pyxel.KEY_RETURN)or (pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and self.cross.mouseCenter()):
             if self.selectStart:
                 self.set_is_visible(False)
             else:
@@ -32,31 +33,16 @@ class StateScore:
                 else:
                     self.del_check = True
 
-        if pyxel.btnp(pyxel.KEY_LEFT):
+        if pyxel.btnp(pyxel.KEY_LEFT) or (pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and self.cross.mouseLeft()):
             if not self.del_check:
                 self.selectStart=True
             else:
                 self.del_done = True
-        if pyxel.btnp(pyxel.KEY_RIGHT):
+        if pyxel.btnp(pyxel.KEY_RIGHT) or (pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and self.cross.mouseRight()):
             if not self.del_check:
                 self.selectStart=False
             else:
                 self.del_done=False
-        if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
-            if 5 < pyxel.mouse_x < 35 and  147 < pyxel.mouse_y < 160:
-                if not self.del_check:
-                    self.set_is_visible(False)
-            elif 35 < pyxel.mouse_x < 65 and  147 < pyxel.mouse_y < 160:
-                self.selectStart=False
-                self.del_check = True
-            elif 80 < pyxel.mouse_x < 100 and  107 < pyxel.mouse_y < 120:
-                if self.del_check:
-                    self.del_check=False
-                    self.del_done=False
-                    self.score_manager.clear_highscores()
-            elif 105 < pyxel.mouse_x < 125 and  107 < pyxel.mouse_y < 120:
-                if self.del_check:
-                    self.del_check=False
 
     def draw(self):
         if not self.visible:
@@ -82,10 +68,6 @@ class StateScore:
 
         pyxel.text(10, 150, "TITLE", startCol)
         pyxel.text(40, 150, "ERASE", deletaCol)
-        pyxel.rectb(5, 147,  30, 13, 1)
-        pyxel.rectb(35, 147,  30, 13, 1)
-        pyxel.rectb(80, 107,  20, 13, 1)
-        pyxel.rectb(105, 107,  20, 13, 1)
         if self.del_check:
             pyxel.text(90, 100, "Delete?", 7)
             if self.del_done:
@@ -96,4 +78,5 @@ class StateScore:
                 yesCol=13
             pyxel.text(85, 110, "YES", yesCol)
             pyxel.text(110, 110, "NO", noCol)
+        self.cross.draw()
 
