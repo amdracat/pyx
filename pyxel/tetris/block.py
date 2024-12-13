@@ -1,4 +1,3 @@
-#import numpy
 import random
 from blockconst import BlockConst
 from masu import Masu
@@ -148,7 +147,6 @@ class Block:
 
 
     def get_rotate_block(self):
-        #self.block = numpy.rot90(self.block, -1)
         if self.center==self.CENTER_CENTER:        
             new_block=self.rotate_90_degrees(self.block)
         else:
