@@ -1,5 +1,5 @@
 import pyxel
-import numpy
+#import numpy
 import random
 import copy
 from collections import deque
