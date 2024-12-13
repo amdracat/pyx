@@ -1,48 +1,47 @@
 import pyxel
 from fire import Fire
 from musicMainGame import MusicMainGame
+from crossKey import CrossKey
 
 class StateStart:
     def __init__(self):
         self.fires = [Fire() for _ in range(8)]  # Fireオブジェクトをリストで管理
-        pyxel.mouse(True)
-        self.selectStart=True
+        #pyxel.mouse(True) #
         self.visible=False
+        self.cross=CrossKey()
+        self.pos=0
 
     def set_is_visible(self,visible):
         self.visible=visible
         if self.visible:
-            self.selectStart=True
+            self.pos=0
 
     def is_visible(self):
         return self.visible
 
     def is_goto_start(self):
-        return self.selectStart
+        if self.pos==0:
+            return True
+        return False
 
     def is_goto_score(self):
-        if not self.selectStart:
+        if self.pos==1:
             return True
         return False
 
     def update(self):
         if not self.visible:
             return
-        if pyxel.btnp(pyxel.KEY_DOWN):
-            self.selectStart=False
-        if pyxel.btnp(pyxel.KEY_UP):
-            self.selectStart=True
+        if pyxel.btnp(pyxel.KEY_DOWN)or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and  self.cross.mouseDown()):
+            if self.pos < 2:
+                self.pos=self.pos+1
+        if pyxel.btnp(pyxel.KEY_UP)or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and  self.cross.mouseUp()):
+            if 0 < self.pos :
+                self.pos=self.pos-1
 
-        if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
-            if 80 < pyxel.mouse_x < 120 :
-                if 120 < pyxel.mouse_y < 140:
-                    self.selectStart=True
-                    self.set_is_visible(False)
-                elif 150 < pyxel.mouse_y < 170:
-                    self.selectStart=False
-                    self.set_is_visible(False)
-
-        if pyxel.btnp(pyxel.KEY_RETURN):
+        if pyxel.btnp(pyxel.KEY_RETURN) or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and  self.cross.mouseCenter()):
+            if self.pos==2:
+                pyxel.quit()
             self.set_is_visible(False)
 
         for i, fire in enumerate(self.fires):
@@ -54,16 +53,24 @@ class StateStart:
         if not self.visible:
             return
         pyxel.blt(75,100, 1,13,0,75, 15,100)
-        if self.selectStart:
+        if self.pos==0:
             playCol=pyxel.frame_count % 16
             scoreCol=13
-        else:
+            exitCol=13
+        elif self.pos==1:
             playCol=13
             scoreCol=pyxel.frame_count % 16
+            exitCol=13
+        else:
+            playCol=13
+            exitCol=pyxel.frame_count % 16
+            scoreCol=13
         pyxel.text(90, 130, "PLAY",  playCol)
-        pyxel.text(90, 160, "SCORE", scoreCol)
+        pyxel.text(90, 140, "SCORE", scoreCol)
+        pyxel.text(90, 150, "EXIT", exitCol)
         
         #pyxel.rectb(80, 120, 40, 20, 1)
         #pyxel.rectb(80, 150, 40, 20, 1)
         for fire in self.fires:
             fire.draw()
+        self.cross.draw()
