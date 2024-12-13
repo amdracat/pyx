@@ -10,10 +10,16 @@ from musicMainGame import MusicMainGame
 class StateScore:
     def __init__(self):
         self.visible=False
+        self.selectStart=True
         self.score_manager = Score()
+        self.del_check=False
+        self.del_done=False
 
     def set_is_visible(self,visible):
         self.visible=visible
+        if self.visible:
+            self.selectStart=True
+            self.del_check=False
 
     def is_visible(self):
         return self.visible
@@ -21,14 +27,65 @@ class StateScore:
         if not self.visible:
             return
         if pyxel.btnp(pyxel.KEY_RETURN):
-            self.set_is_visible(False)
+            if self.selectStart:
+                self.set_is_visible(False)
+            else:
+                if self.del_check:
+                    if self.del_done:
+                        self.score_manager.clear_highscores()
+                    self.del_check=False
+                    self.del_done=False
+                else:
+                    self.del_check = True
+
+        if pyxel.btnp(pyxel.KEY_LEFT):
+            if not self.del_check:
+                self.selectStart=True
+            else:
+                self.del_done = True
+        if pyxel.btnp(pyxel.KEY_RIGHT):
+            if not self.del_check:
+                self.selectStart=False
+            else:
+                self.del_done=False
+
+
     def draw(self):
         if not self.visible:
             return
-        pyxel.text(10, 0, "SCORE", 7)
-        pyxel.text(10, 10, "Highscores:", pyxel.COLOR_WHITE)
+        
+        if self.del_check:
+            scoreCol=13
+        else:
+            scoreCol=pyxel.COLOR_WHITE
+        pyxel.text(10, 10, "Highscores:", scoreCol)
         for i, score in enumerate(self.score_manager.highscores):
-            pyxel.text(10, 20 + i * 10, f"{i + 1}. {score}", pyxel.COLOR_WHITE)
+            pyxel.text(10, 20 + i * 10, f"{i + 1}. {score}",scoreCol)
+
+
+        if self.del_check:
+            startCol=13
+            deletaCol=13
+        elif self.selectStart:
+            startCol=pyxel.frame_count % 16
+            deletaCol=13
+        else:
+            startCol=13
+            deletaCol=pyxel.frame_count % 16
+
+        pyxel.text(10, 150, "TITLE", startCol)
+        pyxel.text(40, 150, "ERASE", deletaCol)
+
+        if self.del_check:
+            pyxel.text(90, 100, "Delete?", 7)
+            if self.del_done:
+                noCol=13
+                yesCol=7
+            else:
+                noCol=7
+                yesCol=13
+            pyxel.text(85, 110, "YES", yesCol)
+            pyxel.text(110, 110, "NO", noCol)
 
 
 class Game:
@@ -43,7 +100,7 @@ class Game:
         self.music.music_start()
         self.mainGame=StateMainGame()
         self.startGame=StateStart()
-        self.scoreGame=StateScore()
+        
         self.startGame.set_is_visible(True)
 
 
@@ -67,7 +124,7 @@ class Game:
                     self.mainGame.set_is_visible(True)
                 elif self.startGame.is_goto_score():
                     self.viewState=2
-                    #self.scoreGame=StateScore()
+                    self.scoreGame=StateScore()
                     self.scoreGame.set_is_visible(True)
 
         elif self.viewState==1:
@@ -79,7 +136,7 @@ class Game:
             self.scoreGame.update()
             if not self.scoreGame.is_visible():
                 self.viewState=0
-                #del(self.scoreGame)
+                del(self.scoreGame)
                 self.startGame.set_is_visible(True)
 
     def draw(self):

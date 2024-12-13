@@ -21,10 +21,12 @@ class Score:
                 file.write(score.to_bytes(4, 'big'))
 
     def set_score(self, new_score):
+        print(f"New score: {new_score}") # デバッグ用プリント文
         if new_score > min(self.highscores):
             self.highscores.append(new_score)
             self.highscores = sorted(self.highscores, reverse=True)[:10]
             self.save_highscores()  # ハイスコアが更新された場合にファイルに書き出す
+            print(f"Updated highscores: {self.highscores}") # デバッグ用プリント文
 
     def clear_highscores(self):
         self.highscores = [0] * 10
