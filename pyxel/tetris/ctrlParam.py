@@ -1,5 +1,3 @@
-
-
 class CtrlParam:
     def score_countup(self,line,baseScore):
         score=baseScore

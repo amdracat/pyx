@@ -114,7 +114,6 @@ class Block:
                 row.append(self.block[i][j].get())
             print(" ".join(map(str, row)))
 
-
     def get_block(self):
         return self.block
 
@@ -169,3 +168,15 @@ class Block:
 
     def get_center_y(self):
         return self.centry
+
+    def rotate_to_0(self):
+        size = len(self.block)
+        role=0
+        for i in range(size):
+            for j in range(size):
+                role=self.block[i][j].getRole()
+        if role // 90 != 0:
+            num = 4-role // 90
+            for _ in range(num):
+                self.rotate()
+       

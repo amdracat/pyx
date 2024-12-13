@@ -14,7 +14,7 @@ from musicMainGame import MusicMainGame
 from keyRepeat import KeyRepeat
 from ctrlParam import CtrlParam
 import math
-
+from score import Score
 
 class StateMainGame:
     X_OFFSET=10
@@ -25,10 +25,9 @@ class StateMainGame:
     # 初期化
     #======================================
     def __init__(self):
+        self.music =MusicMainGame()
         self.initialize_game(True)
         self.initialize_once()   
-        self.music =MusicMainGame()
-        self.music.music_start()
         self.param=CtrlParam()
 
     def initialize_game(self,isFisrt):
@@ -58,9 +57,9 @@ class StateMainGame:
         self.selectContinue=True
         self.particles = []
 
-
     def initialize_once(self):
         self.visible=False
+        self.score_manager = Score()
         self.leftKey=KeyRepeat(
             key1=pyxel.KEY_LEFT,
             key2=pyxel.GAMEPAD1_BUTTON_DPAD_LEFT,
@@ -80,6 +79,12 @@ class StateMainGame:
     #======================================
     def set_is_visible(self,visible):
         self.visible=visible
+        if self.visible:
+            self.initialize_game(False)
+        else:
+            self.initialize_game(False)
+    def is_visible(self):
+        return self.visible
 
     #======================================
     # 30fpsでpyxelにコールされる状態更新処理
@@ -88,14 +93,21 @@ class StateMainGame:
         if not self.visible:
             return
         #  *** 中断 ***
-        if pyxel.btnp(pyxel.KEY_A):
-               if not self.waitUserInput:
-                   self.waitUserInput=True
-                   self.music.music_stop()
-               else:
-                   if self.selectContinue:
-                       self.waitUserInput=False
-                       self.music.music_start()
+        if pyxel.btnp(pyxel.KEY_SPACE):
+            if not self.waitUserInput:
+                self.waitUserInput=True
+                self.music.music_stop()
+
+        if pyxel.btnp(pyxel.KEY_RETURN):
+            if self.waitUserInput:
+                if self.selectContinue:
+                   self.waitUserInput=False
+                   self.music.music_start()
+                   if self.isGameOver:
+                    self.initialize_game(False)
+                else:
+                    self.music.music_start()
+                    self.set_is_visible(False)
 
         if  self.waitUserInput:
             if pyxel.btnp(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT):
@@ -107,7 +119,6 @@ class StateMainGame:
             self.cycle_start()
             self.update_key()
             self.action()
-
 
     #======================================
     # キー動作定義
@@ -141,36 +152,47 @@ class StateMainGame:
         if self.canHold:
             self.canHold=False
             if self.holdBlock is None:
+                self.activeBlock.rotate_to_0()
                 self.holdBlock = copy.deepcopy(self.activeBlock)
                 del(self.activeBlock)
                 self.block_queue.append(Block())
                 self.activeBlock = self.block_queue.popleft()
+                self.x=self.X_POS_INIT
+                self.y=self.Y_POS_INIT
             else:
                 #del(self.activeBlock)
+                self.activeBlock.rotate_to_0()
                 temp = copy.deepcopy(self.activeBlock)
                 self.activeBlock=copy.deepcopy(self.holdBlock)
                 self.holdBlock= copy.deepcopy(temp)
+                self.x=self.X_POS_INIT
+                self.y=self.Y_POS_INIT
+
 
     def det_key_rotate(self):
         if self.stage.can_plot_block(self.x,self.y, self.activeBlock.get_rotate_block()):
             self.activeBlock.rotate()
 
-    def det_key_debug(self):
-        self.initialize_game(False)
-        #self.score = self.score + 1000
-
+    #def det_key_debug(self):
+    #    #self.music.music_stop()
+    #    #self.music.sound_gameover()
+    #    #self.music.sound_effect(2)
+    #    #self.initialize_game(False)
+    #    self.score = self.score + 1000
 
     def update_key(self):
         if pyxel.btnp(pyxel.KEY_E):
             self.det_key_hold()
 
-        if pyxel.btnp(pyxel.KEY_S):
-            self.det_key_debug()
+        #if pyxel.btnp(pyxel.KEY_S):
+        #    self.det_key_debug()
+
+        if pyxel.btnp(pyxel.KEY_RETURN):
+            if self.isGameOver:
+                self.music.music_start()
+                self.initialize_game(False)
 
         if pyxel.btnp(pyxel.KEY_R):
-            if self.isGameOver:
-                self.initialize_game(False)
-                return
             self.det_key_rotate()
 
         self.leftKey.update()
@@ -230,7 +252,15 @@ class StateMainGame:
             #行のクリア判定＆スコア更新
             line = self.stage.clear_full_lines()
             if line != 0:
-                self.create_explosion(130, self.y*10)
+                
+                if line == 4:
+                    self.create_explosion(130, self.y*10)
+                    self.music.sound_effect(1)
+                else:
+                    self.music.sound_effect(0)
+            else:
+                self.music.sound_effect(2)
+            
             self.score = self.param.score_countup(line,self.score)
             self.block_fall_speed = self.param.block_fall_speed_ctrl(self.score)
 
@@ -246,10 +276,12 @@ class StateMainGame:
                 #print("GameOver")
                 #self.activeBlock.print_state()
                 #self.stage.print_grid()
+                self.score_manager.set_score(self.score)
+                self.music.music_stop()
+                self.music.sound_gameover()
                 self.stage.gameover()
                 self.isGameOver=True
 
- 
     #---------------------
     # 落下処理
     #---------------------
@@ -285,7 +317,10 @@ class StateMainGame:
             return
         self.draw_main_game()
         if self.waitUserInput:
-            pyxel.text(55, 41, "Continue?", pyxel.frame_count % 16)
+            if self.isGameOver:
+                pyxel.text(55, 41, "Continue?", 7)
+            else:
+                pyxel.text(55, 41, "Continue?", pyxel.frame_count % 16)
             if self.selectContinue:
                 pyxel.rectb(52, 49, 20, 10, 1)
             else:
@@ -304,12 +339,12 @@ class StateMainGame:
                 self.draw_block(self.stage.get_stage_block(i,j),i,j)
 
         if self.isGameOver:
-            pyxel.text(55, 41, "Game Over!!", pyxel.frame_count % 16)
+            pyxel.text(55, 100, "Game Over!!", pyxel.frame_count % 16)
         
         if not self.isGameOver:
             self.draw_next_two_blocks()
         self.draw_score()
-        self.show_debug_param()
+        #self.show_debug_param()
         for particle in self.particles:
             pyxel.pset(particle.x, particle.y, 8 + particle.life % 8)
 
@@ -385,15 +420,11 @@ class StateMainGame:
     # デバッグ
     #---------------------
     def show_debug_param(self):
-        offset_y=160
+        offset_y=200
         offset_val=10
         pyxel.text(136, offset_y+offset_val*0, f"speed:{self.block_fall_speed}", 7)
         pyxel.text(136, offset_y+offset_val*1, f"timer:{self.timer.get_count()*33}", 7)
-        pyxel.text(136, offset_y+offset_val*2, f"ti_ru:{self.timer.isTimerRunning()}", 7)
-        pyxel.text(136, offset_y+offset_val*3, f"ti_co:{self.timer.isTimerComplate() }", 7)
-        #pyxel.text(136, offset_y+offset_val*4, f"key_L:{self.left_key_counter}", 7)
-        #pyxel.text(136, offset_y+offset_val*5, f"kye_R:{self.right_key_counter}", 7)
-        pyxel.text(136, offset_y+offset_val*6, f"x:{self.x}", 7)
-        pyxel.text(136, offset_y+offset_val*7, f"y:{self.y}", 7)
+        pyxel.text(136, offset_y+offset_val*2, f"x:{self.x}", 7)
+        pyxel.text(136, offset_y+offset_val*3, f"y:{self.y}", 7)
 
 

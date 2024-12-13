@@ -1,7 +1,6 @@
 
 from blockconst import BlockConst
 
-
 class Masu:
     def __init__(self, val):
         self.val = val  # マスの種類

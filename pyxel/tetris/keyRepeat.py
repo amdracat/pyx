@@ -1,6 +1,5 @@
 import pyxel
 
-
 class KeyRepeat:
     def __init__(self,key1,key2,firstDelay,repeat,ufunc):
         self.keyType1=key1
