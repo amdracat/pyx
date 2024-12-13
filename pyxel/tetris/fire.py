@@ -3,8 +3,6 @@ import pyxel
 from particle import Particle2
 import random
 
-
-
 class Fire:
     def __init__(self,x_s=None,y_s=None,y_g=None):
         if x_s==None:
@@ -44,7 +42,6 @@ class Fire:
             particle.update()
             if particle.life <= 0:
                 self.particles.remove(particle)
-        
 
     def draw(self):
         for particle in self.particles:

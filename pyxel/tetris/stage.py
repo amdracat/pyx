@@ -5,9 +5,6 @@ from blockconst import BlockConst
 from masu import Masu
 from block import Block
 
-
-
-    
 class Stage:
     # クラス属性として定数を定義
     ROWS = 22

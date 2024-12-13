@@ -1,5 +1,3 @@
-
-
 class BlockConst:
     WALL = -1
     BLANK= 0

@@ -1,6 +1,5 @@
 import pyxel
 
-
 class MusicMainGame:
     def music_start(self):
         pyxel.sounds[0].set(

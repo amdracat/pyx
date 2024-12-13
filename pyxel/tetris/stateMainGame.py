@@ -57,8 +57,6 @@ class StateMainGame:
         self.selectContinue=True
         self.particles = []
 
-
-
     def initialize_once(self):
         self.visible=False
         self.score_manager = Score()
@@ -122,7 +120,6 @@ class StateMainGame:
             self.update_key()
             self.action()
 
-
     #======================================
     # キー動作定義
     #======================================
@@ -160,31 +157,35 @@ class StateMainGame:
                 del(self.activeBlock)
                 self.block_queue.append(Block())
                 self.activeBlock = self.block_queue.popleft()
+                self.x=self.X_POS_INIT
+                self.y=self.Y_POS_INIT
             else:
                 #del(self.activeBlock)
                 self.activeBlock.rotate_to_0()
                 temp = copy.deepcopy(self.activeBlock)
                 self.activeBlock=copy.deepcopy(self.holdBlock)
                 self.holdBlock= copy.deepcopy(temp)
+                self.x=self.X_POS_INIT
+                self.y=self.Y_POS_INIT
+
 
     def det_key_rotate(self):
         if self.stage.can_plot_block(self.x,self.y, self.activeBlock.get_rotate_block()):
             self.activeBlock.rotate()
 
-    def det_key_debug(self):
-        #self.music.music_stop()
-        #self.music.sound_gameover()
-        #self.music.sound_effect(2)
-        #self.initialize_game(False)
-        self.score = self.score + 1000
-
+    #def det_key_debug(self):
+    #    #self.music.music_stop()
+    #    #self.music.sound_gameover()
+    #    #self.music.sound_effect(2)
+    #    #self.initialize_game(False)
+    #    self.score = self.score + 1000
 
     def update_key(self):
         if pyxel.btnp(pyxel.KEY_E):
             self.det_key_hold()
 
-        if pyxel.btnp(pyxel.KEY_S):
-            self.det_key_debug()
+        #if pyxel.btnp(pyxel.KEY_S):
+        #    self.det_key_debug()
 
         if pyxel.btnp(pyxel.KEY_RETURN):
             if self.isGameOver:
@@ -281,7 +282,6 @@ class StateMainGame:
                 self.stage.gameover()
                 self.isGameOver=True
 
- 
     #---------------------
     # 落下処理
     #---------------------
@@ -344,7 +344,7 @@ class StateMainGame:
         if not self.isGameOver:
             self.draw_next_two_blocks()
         self.draw_score()
-        self.show_debug_param()
+        #self.show_debug_param()
         for particle in self.particles:
             pyxel.pset(particle.x, particle.y, 8 + particle.life % 8)
 

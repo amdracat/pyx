@@ -1,7 +1,6 @@
 import numpy
 import random
 
-
 import math
 class Particle:
     def __init__(self, x, y):

@@ -114,7 +114,6 @@ class Block:
                 row.append(self.block[i][j].get())
             print(" ".join(map(str, row)))
 
-
     def get_block(self):
         return self.block
 
