@@ -1,4 +1,4 @@
-import numpy
+#import numpy
 import random
 from blockconst import BlockConst
 from masu import Masu

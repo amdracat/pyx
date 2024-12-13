@@ -1,5 +1,5 @@
 
-import numpy
+#import numpy
 
 from blockconst import BlockConst
 from masu import Masu
