@@ -6,7 +6,7 @@ class MusicMainGame:
             "E3E3 B2 C3 D3D3 C3 B2 A2A2 A2 C3 E3E3 D3 C3 B2B2 B2 C3 D3D3 E3E3 C3C3 A2A2 A2A2 RR"  "R D3D3 F3 A3A3 G3 F3 E3E3 R C3 E3E3 D3 C3 B2B2 B2 C3 D3D3 E3E3 C3C3 A2A2 A2A2 RR",
             "p",
             "4",
-            "v",
+            "n",
             30,
         )
 
