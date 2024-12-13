@@ -5,7 +5,7 @@ from musicMainGame import MusicMainGame
 class StateStart:
     def __init__(self):
         self.fires = [Fire() for _ in range(8)]  # Fireオブジェクトをリストで管理
-        
+        pyxel.mouse(True)
         self.selectStart=True
         self.visible=False
 
@@ -33,6 +33,15 @@ class StateStart:
         if pyxel.btnp(pyxel.KEY_UP):
             self.selectStart=True
 
+        if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
+            if 80 < pyxel.mouse_x < 120 :
+                if 120 < pyxel.mouse_y < 140:
+                    self.selectStart=True
+                    self.set_is_visible(False)
+                elif 150 < pyxel.mouse_y < 170:
+                    self.selectStart=False
+                    self.set_is_visible(False)
+
         if pyxel.btnp(pyxel.KEY_RETURN):
             self.set_is_visible(False)
 
@@ -52,7 +61,9 @@ class StateStart:
             playCol=13
             scoreCol=pyxel.frame_count % 16
         pyxel.text(90, 130, "PLAY",  playCol)
-        pyxel.text(90, 140, "SCORE", scoreCol)
+        pyxel.text(90, 160, "SCORE", scoreCol)
         
+        #pyxel.rectb(80, 120, 40, 20, 1)
+        #pyxel.rectb(80, 150, 40, 20, 1)
         for fire in self.fires:
             fire.draw()
