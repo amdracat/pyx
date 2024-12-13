@@ -25,10 +25,9 @@ class StateMainGame:
     # 初期化
     #======================================
     def __init__(self):
+        self.music =MusicMainGame()
         self.initialize_game(True)
         self.initialize_once()   
-        self.music =MusicMainGame()
-        self.music.music_start()
         self.param=CtrlParam()
 
     def initialize_game(self,isFisrt):
@@ -57,6 +56,8 @@ class StateMainGame:
         self.waitUserInput=False
         self.selectContinue=True
         self.particles = []
+        self.music.music_stop()
+        self.music.music_start()
 
 
     def initialize_once(self):
@@ -156,8 +157,11 @@ class StateMainGame:
             self.activeBlock.rotate()
 
     def det_key_debug(self):
-        self.initialize_game(False)
-        #self.score = self.score + 1000
+        #self.music.music_stop()
+        #self.music.sound_gameover()
+        #self.music.sound_effect(2)
+        #self.initialize_game(False)
+        self.score = self.score + 1000
 
 
     def update_key(self):
@@ -230,7 +234,15 @@ class StateMainGame:
             #行のクリア判定＆スコア更新
             line = self.stage.clear_full_lines()
             if line != 0:
-                self.create_explosion(130, self.y*10)
+                
+                if line == 4:
+                    self.create_explosion(130, self.y*10)
+                    self.music.sound_effect(1)
+                else:
+                    self.music.sound_effect(0)
+            else:
+                self.music.sound_effect(2)
+            
             self.score = self.param.score_countup(line,self.score)
             self.block_fall_speed = self.param.block_fall_speed_ctrl(self.score)
 
@@ -246,6 +258,8 @@ class StateMainGame:
                 #print("GameOver")
                 #self.activeBlock.print_state()
                 #self.stage.print_grid()
+                self.music.music_stop()
+                self.music.sound_gameover()
                 self.stage.gameover()
                 self.isGameOver=True
 
@@ -385,15 +399,11 @@ class StateMainGame:
     # デバッグ
     #---------------------
     def show_debug_param(self):
-        offset_y=160
+        offset_y=200
         offset_val=10
         pyxel.text(136, offset_y+offset_val*0, f"speed:{self.block_fall_speed}", 7)
         pyxel.text(136, offset_y+offset_val*1, f"timer:{self.timer.get_count()*33}", 7)
-        pyxel.text(136, offset_y+offset_val*2, f"ti_ru:{self.timer.isTimerRunning()}", 7)
-        pyxel.text(136, offset_y+offset_val*3, f"ti_co:{self.timer.isTimerComplate() }", 7)
-        #pyxel.text(136, offset_y+offset_val*4, f"key_L:{self.left_key_counter}", 7)
-        #pyxel.text(136, offset_y+offset_val*5, f"kye_R:{self.right_key_counter}", 7)
-        pyxel.text(136, offset_y+offset_val*6, f"x:{self.x}", 7)
-        pyxel.text(136, offset_y+offset_val*7, f"y:{self.y}", 7)
+        pyxel.text(136, offset_y+offset_val*2, f"x:{self.x}", 7)
+        pyxel.text(136, offset_y+offset_val*3, f"y:{self.y}", 7)
 
 

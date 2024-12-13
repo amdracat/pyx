@@ -18,15 +18,58 @@ class MusicMainGame:
             "n",
             30,
         )
-
         pyxel.sounds[2].set(
             "f0ra4r f0ra4r f0ra4r f0f0a4r", "n", "6622 6622 6622 6422", "f", 30
         )
-
         pyxel.play(0, [0], loop=True)
         pyxel.play(1, [1], loop=True)
         pyxel.play(2, [2], loop=True)
 
+    def sound_effect(self,idx):
+        if idx==0:
+            pyxel.sounds[3].set(
+                "f4 b4 a4",
+                "p",
+                "6",
+                "n",
+                15
+            )
+        elif idx == 1:
+            pyxel.sounds[3].set(
+                "b3 d4 g4 b4",
+                "p",
+                "6",
+                "n",
+                15
+            )
+        elif idx == 2:
+            pyxel.sounds[3].set(
+                "e1",
+                "n",
+                "6",
+                "n",
+                15
+            )
+        pyxel.play(3, [3], loop=False)
+
+    def sound_gameover(self):
+        pyxel.sounds[0].set(
+            "g0 g0 g0 e0e0e0 r f0 f0 f0 d0d0d0 r",
+            "p",
+            "6",
+            "n",
+            30,
+        )
+        pyxel.sounds[1].set(
+            "g0 g0 g0 e0e0e0 r f0 f0 f0 d0d0d0 r",
+            "n",
+            "1",
+            "n",
+            30,
+        )
+        pyxel.play(0, [0], loop=False)
+        pyxel.play(1, [1], loop=False)
+        
     def music_stop(self):
         pyxel.stop(0)
         pyxel.stop(1)
