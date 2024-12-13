@@ -12,7 +12,7 @@ class Block:
             self.sharp = sharp
         
         #self.sharp=random_number = random.randint(0, 6)
-        #self.sharp=0
+        self.sharp=0
         self.block  = [[Masu(BlockConst.BLANK) for _ in range(4)] for _ in range(4)]
         self.center=self.CENTER_CENTER
         self.kind=0

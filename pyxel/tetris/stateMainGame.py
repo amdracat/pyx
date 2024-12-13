@@ -97,8 +97,8 @@ class StateMainGame:
             if not self.waitUserInput:
                 self.waitUserInput=True
                 self.music.music_stop()
-
-        if pyxel.btnp(pyxel.KEY_RETURN) or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and  self.cross.mouseCenter()):
+        pushCenter=( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and  self.cross.mouseCenter())
+        if pyxel.btnp(pyxel.KEY_RETURN) or pushCenter:
             if self.waitUserInput:
                 if self.selectContinue:
                     self.waitUserInput=False
@@ -109,8 +109,8 @@ class StateMainGame:
                     self.music.music_start()
                     self.set_is_visible(False)
             else:
-                if ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and  self.cross.mouseCenter()):
-                    self.activeBlock.rotate()
+                if pushCenter:
+                    self.det_key_rotate()
 
         if  self.waitUserInput:
             if pyxel.btnp(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT) or ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and  self.cross.mouseRight()):
