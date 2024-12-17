@@ -384,8 +384,8 @@ class StateMain:
 
     def create_cards(self):
         # カードを生成し、キューに追加
-        #for num in range(12):
-        for num in range(6):
+        for num in range(12):
+        #for num in range(6):
             self.card_queue.append(Card(num, pyxel.COLOR_WHITE,self.nHaichi))
             self.card_queue.append(Card(num, pyxel.COLOR_BLACK,self.nHaichi))
         
@@ -593,7 +593,8 @@ class StateMain:
         self.count=self.count+1
         if self.count == 30:
             self.count=0
-            self.sec=self.sec+1
+            if not self.miss:
+                self.sec=self.sec+1
 
 
         if self.start:
@@ -656,7 +657,7 @@ class Game:
         pyxel.init(160, 256, title="algo Pyxel")
         pyxel.mouse(True) #
         self.viewNo=1
-        self.algo=StateMain(8,2)
+        self.algo=StateMain(8,3)
         self.algo.setisVisible(True)
 
         pyxel.run(self.update, self.draw)
