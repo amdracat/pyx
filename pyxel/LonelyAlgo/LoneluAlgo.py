@@ -57,9 +57,9 @@ class Card:
             self.x = x
             self.y = y
 
-    def __init__(self,num,color):
+    def __init__(self,num,color,nHaichi):
         self.isPlace=False
-
+        self.nHaichi=nHaichi
         self.num = num
         self.color=color
         self.hold=False
@@ -76,8 +76,13 @@ class Card:
         self.isMoveAll=True
         self.allCards = []
         self.count=0
-        #self.arrSameY = []
+        self.isCantOpen = False
+        self.warn_count = 0
 
+
+    def setisCantOpen(self):
+        self.warn_count = 0
+        self.isCantOpen=True
     def getCardInfo(self):
         return self.num ,self.color
     def set_position_common(self, x, y,init):
@@ -86,14 +91,14 @@ class Card:
             x, y = self.adjust_view_position_and_make_map_position(x, y)
             #print(f"{x} {y}")
             
-            if y <= self.Y_SIZE*(8) or ((x//self.X_SIZE -1)==7 and (y//self.Y_SIZE -1)==8) :
+            if y <= self.Y_SIZE*(self.nHaichi) or ((x//self.X_SIZE -1)==7 and (y//self.Y_SIZE -1)==8) :
                 self.center = self.Position(x, y)
                 self.x_map=x//self.X_SIZE -1
                 self.y_map=y//self.Y_SIZE -1
             else:
-                self.center = self.Position(x, self.Y_SIZE*(8) )
+                self.center = self.Position(x, self.Y_SIZE*(self.nHaichi) )
                 self.x_map=x//self.X_SIZE -1
-                self.y_map=self.Y_SIZE*(8) //self.Y_SIZE -1
+                self.y_map=self.Y_SIZE*(self.nHaichi) //self.Y_SIZE -1
             #print(f"{self.center.x} {self.center.y} { self.x_map} { self.y_map}")
             self.vertices = self.calculate_vertices(self.center)
 
@@ -243,6 +248,7 @@ class Card:
         self.allCards =allCard
         if self.isTouch() and pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
             self.hold=True
+            self.isCantOpen=False
             #xOld,yOld=self.getPosition()
             #print(f"{xOld} {yOld}")
             #ddd=True
@@ -266,7 +272,12 @@ class Card:
                         #print("back")
                         break
 
-        
+        if self.isCantOpen:
+            self.warn_count =self.warn_count +1
+            if self.warn_count > 30:
+                #self.isOpen=False
+                self.isCantOpen=False
+
         if self.isOpen:
             if self.is_flipping:
                 self.flip_frame += 1
@@ -300,8 +311,19 @@ class Card:
         if l==1:
             l=0
 
+
         #pyxel.rectb(self.vertices[0].x +1,self.vertices[0].y+1, self.X_SIZE-2, self.Y_SIZE-2, pyxel.COLOR_RED)
-        pyxel.rectb(self.vertices[0].x - self.width // 2+self.X_SIZE//2+1, self.vertices[0].y+1, self.width-2, self.height-2, pyxel.COLOR_BLACK)
+        red_ranges = [(0, 2), (4, 6), (8, 10), (12, 14), (16, 18), (20, 22), (24, 26), (28, 30)]
+        if self.isCantOpen:
+            # warn_countが赤色にする範囲に含まれているかチェック
+            if any(start <= self.warn_count < end for start, end in red_ranges):
+                wakuColor = pyxel.COLOR_RED
+            else:
+                wakuColor = pyxel.COLOR_WHITE
+        else:
+            wakuColor=pyxel.COLOR_BLACK
+        
+        pyxel.rectb(self.vertices[0].x - self.width // 2+self.X_SIZE//2+1, self.vertices[0].y+1, self.width-2, self.height-2, wakuColor)
         if self.flip_frame > 5:
             # 表面を描く
             pyxel.rect(self.vertices[0].x- self.width // 2 + self.X_SIZE//2+2, self.vertices[0].y +2, self.width - 4, self.height - 4, fillViewColor)
@@ -318,30 +340,37 @@ class Card:
         #print(f" {ret} {pyxel.mouse_x } {pyxel.mouse_y} { self.vertices[0].x  }  { self.vertices[1].x  }  { self.vertices[0].y  }  { self.vertices[2].y }")
         return ret
 
-#class StateMain:
-
-
-class Game:
-    def __init__(self):
+class StateMain:
+    def __init__(self,tateNum,zanki):
+        self.nHaichi=tateNum
         self.count=0
         self.sec=0
         self.frame_count = 0
         self.start=False
         self.viewStart=False
-        pyxel.init(160, 256, title="algo Pyxel")
         self.allCard = []
         self.cards = [[None for _ in range(10)] for _ in range(9)]  # 9列10行の2次元配列を作成
         self.card_queue = deque()
         self.create_cards()
-        pyxel.mouse(True) #
         self.grid=False
+        self.done=False
+        self.miss=False
+        self.zanki=zanki
         self.drawCardBtn=Button(5,205,40,15,pyxel.COLOR_BLACK,"DARW",pyxel.COLOR_WHITE)
         self.openBtn=Button(5,220,40,15,pyxel.COLOR_BLACK,"OPEN",pyxel.COLOR_WHITE)
         self.newBtn=Button(5,235,40,10,pyxel.COLOR_BLACK,"NEW GAME",pyxel.COLOR_WHITE)
         self.settingBtn=Button(5,245,40,10,pyxel.COLOR_BLACK,"SETTING",pyxel.COLOR_WHITE)
         #pyxel.load("tetris_resource.pyxres")
-        self.draw_init_cards(8)
-        pyxel.run(self.update, self.draw)
+        self.draw_init_cards(self.nHaichi)
+        self.is_visible=False
+        self.ng_card=None
+        self.del_count=0
+
+    def isVisible(self):
+        return self.is_visible
+
+    def setisVisible(self,isVisible):
+        self.is_visible=isVisible
 
     def draw_init_cards(self,num):
         for i in range(num):  # キューから8枚取り出してリストに追加
@@ -350,14 +379,15 @@ class Game:
                 card.setPositionIdx(4,i)
                 card.setVisible(True)
                 num,col=card.getCardInfo()
-                print(f"No{i} {num} {col}")
+                #print(f"No{i} {num} {col}")
                 self.allCard.append(card)
 
     def create_cards(self):
         # カードを生成し、キューに追加
-        for num in range(12):
-            self.card_queue.append(Card(num, pyxel.COLOR_WHITE))
-            self.card_queue.append(Card(num, pyxel.COLOR_BLACK))
+        #for num in range(12):
+        for num in range(6):
+            self.card_queue.append(Card(num, pyxel.COLOR_WHITE,self.nHaichi))
+            self.card_queue.append(Card(num, pyxel.COLOR_BLACK,self.nHaichi))
         
         # カードをシャッフル
         random.shuffle(self.card_queue)
@@ -372,10 +402,105 @@ class Game:
                     return False
         return False
 
+
+    def checkGame(self):
+        for x in range(9):
+            for y in range(10):
+                if self.cards[x][y] is not None:
+                    card = self.cards[x][y]
+                    num, color = card.getCardInfo()
+                    if not self.is_valid_card_position(x, y, num, color):
+                        return False
+        return True
+
+    def is_valid_card_position(self, x, y, num, color):
+        # y方向に並んでいるカードの数をカウント
+        count = self.count_cards_in_line(y)
+        if count > self.nHaichi:
+            return False
+
+        # 数字が小さい順であることを確認
+        previous_num = -1
+        previous_color = None
+        for i in range(9):
+            if self.cards[i][y] is not None:
+                current_card = self.cards[i][y]
+                current_num, current_color = current_card.getCardInfo()
+                if current_num < previous_num:
+                    return False
+                elif current_num == previous_num:
+                    if previous_color == pyxel.COLOR_WHITE and current_color == pyxel.COLOR_BLACK:
+                        return False
+                previous_num = current_num
+                previous_color = current_color
+
+        return True
+
+
+
+
+    def can_open_card(self, x, y):
+        # カードをオープンするための条件を定義
+        # 例: self.nHaichiの値に基づいてカードをオープンするかどうかを決定
+        if self.nHaichi == 8 and self.count_cards_in_line(y) <= 3:
+            return True
+        elif self.nHaichi == 7 and self.count_cards_in_line(y) <= 4:
+            return True
+        elif self.nHaichi == 6 and self.count_cards_in_line(y) <= 4:
+            return True
+        elif self.nHaichi == 5 and self.count_cards_in_line(y) <= 5:
+            return True
+        elif self.nHaichi == 4 and self.count_cards_in_line(y) <= 6:
+            return True
+        elif self.nHaichi == 3 and self.count_cards_in_line(y) <= 8:
+            return True
+        return False
+
+    def count_cards_in_line(self, y):
+        # 指定された高さラインにあるカードの数をカウント
+        count = 0
+        for x in range(9):
+            if self.cards[x][y] is not None:
+                count += 1
+        return count
+
+
+    def openCard(self):
+        retCard=None
+        for card in self.allCard:
+            if self.cards[7][8]==None:
+                if not self.start:
+                    self.start=True
+                    self.count=0
+                    self.sec=0
+                    self.frame_count=0
+                    self.viewStart=True
+
+                for x in range(9):
+                    for y in range(10):
+                        if self.cards[x][y] is not None:
+                            card = self.cards[x][y]
+                            #num, color = card.getCardInfo()
+                            # ここでカードをオープンする条件をチェック
+                            if self.can_open_card(x, y):
+                                card.setisOpen(True)
+                                retCard=card
+                            else:
+                                if not card.isOpend():
+                                    card.setisCantOpen()
+        return retCard
+
+
+
+                            
+
+
+
     def update(self):
+        if not self.is_visible:
+            return
         self.cards = [[None for _ in range(10)] for _ in range(9)] 
-        if pyxel.btnp(pyxel.KEY_Q):
-            pyxel.quit()
+
         if pyxel.btnp(pyxel.KEY_S):
             self.grid = not self.grid
 
@@ -387,40 +512,60 @@ class Game:
             self.cards[x][y]=card
 
         if self.drawCardBtn.update():
-            if self.drawCardBtn.isOn:
+            if self.drawCardBtn.isOn and not self.miss:
                 isDraw=True
                 for card in self.allCard:
                     if not card.isOpend():
                         isDraw=False
 
-                print(f"len:{len(self.card_queue)}")
+                #print(f"len:{len(self.card_queue)}")
                 if self.cards[7][8]==None and isDraw:
                     if self.card_queue:
                         card=self.card_queue.popleft()
                         card.setPositionInitIdx(7,8)
                         card.setVisible(True)
                         self.allCard.append(card)
-                else:
-                    print("card exits")
+                #else:
+                #    print("card exits")
 
         self.frame_count += 1
         if self.openBtn.update():
-            if self.openBtn.isOn:
-                for card in self.allCard:
-                    if self.cards[7][8]==None:
-                        if not self.start:
-                            self.start=True
-                            self.count=0
-                            self.sec=0
-                            self.frame_count=0
-                            self.viewStart=True
-                        card.setisOpen(True)
+            if self.openBtn.isOn and not self.miss:
+                opencard = self.openCard()
+                ret = self.checkGame()
+                leng = len(self.card_queue)
+                print(f"check {ret}  {leng}")
+                if ret == False:
+                    self.zanki= self.zanki-1
+                    if self.zanki == 0:
+                        self.miss=True
+                    else:
+                        self.ng_card=opencard
+                        self.del_count=0
+                        opencard.setisCantOpen()
+                        
+                if leng == 0:
+                    print("end!")
+                    
 
+        if self.newBtn.update():
+            if self.newBtn.isOn:
+                print("p")
+                self.is_visible=False
 
+        if self.settingBtn.update() and not self.miss:
+            if self.settingBtn.isOn:
+                print("s")
 
-
-
-
+        if self.ng_card != None:
+            self.del_count=self.del_count+1
+            if self.del_count > 30:
+                self.del_count = 0
+                self.card_queue.append(Card(self.ng_card.num, self.ng_card.color,self.nHaichi))
+                random.shuffle(self.card_queue)
+                self.allCard.remove(self.ng_card)
+                del(self.ng_card)
+                self.ng_card=None
 
 
 
@@ -428,7 +573,9 @@ class Game:
 
 
     def draw(self):
-        pyxel.cls(pyxel.COLOR_WHITE)
+        if not self.is_visible:
+            return
+        
         if self.grid:
             if self.cards[7][8]!=None:
                 pyxel.text(130,1,f"{self.cards[7][8].num}", pyxel.COLOR_BLACK)
@@ -454,6 +601,7 @@ class Game:
             secLen=len( strSec)*pyxel.FONT_WIDTH
             pyxel.text(110-secLen,1,strSec, pyxel.COLOR_BLACK)
             pyxel.text(110,1," sec", pyxel.COLOR_BLACK)
+            pyxel.text(50, 1, f"zanki {self.zanki}", pyxel.COLOR_BLACK)
 
             if self.viewStart:
                 # フレーム数に基づいて位置をランダムに変える
@@ -468,8 +616,10 @@ class Game:
                 if self.sec > 2:
                     self.viewStart=False
 
+                
 
-
+        if self.miss:
+            pyxel.text(100, 100, f"Game Over", pyxel.COLOR_BLACK)
 
         x_offset=50
         y_offset=235
@@ -494,6 +644,44 @@ class Game:
         #text = f"{self.string}"
         #text_width = pyxel.FONT_WIDTH * len(text)
         #pyxel.text(self.x + (self.w/2 - text_width/2),self.y+self.h/2-3, self.string, self.string_color)
+
+
+
+
+
+
+class Game:
+    def __init__(self):
+
+        pyxel.init(160, 256, title="algo Pyxel")
+        pyxel.mouse(True) #
+        self.viewNo=1
+        self.algo=StateMain(8,2)
+        self.algo.setisVisible(True)
+
+        pyxel.run(self.update, self.draw)
+
+    def update(self):
+
+        if pyxel.btnp(pyxel.KEY_Q):
+            pyxel.quit()
+
+        if self.viewNo==1:
+            self.algo.update()
+            if not self.algo.isVisible():
+                del(self.algo)
+                #self.algo=StateMain()
+                #self.algo.setisVisible(True)
+                self.viewNo=2
+        #elif self.viewNo==2:
+
+    def draw(self):
+        pyxel.cls(pyxel.COLOR_WHITE)
+        if self.viewNo==1:
+            self.algo.draw()
+        elif self.viewNo==2:
+            pyxel.text(80, 100, "Setting", pyxel.COLOR_BLACK)
+
 
 
 Game()
