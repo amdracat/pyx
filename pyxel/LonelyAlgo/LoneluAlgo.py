@@ -75,25 +75,32 @@ class Card:
         self.isMoveOnlyX=False
         self.isMoveAll=True
         self.allCards = []
+        self.count=0
+        #self.arrSameY = []
 
     def getCardInfo(self):
         return self.num ,self.color
-    #以下の疑似コードをコードにして。疑似コード部は「疑似コード」と記載する
     def set_position_common(self, x, y,init):
 
         if not self.isOpen and not init:
             x, y = self.adjust_view_position_and_make_map_position(x, y)
-            if y <= self.Y_SIZE*(8) :
+            #print(f"{x} {y}")
+            
+            if y <= self.Y_SIZE*(8) or ((x//self.X_SIZE -1)==7 and (y//self.Y_SIZE -1)==8) :
                 self.center = self.Position(x, y)
+                self.x_map=x//self.X_SIZE -1
+                self.y_map=y//self.Y_SIZE -1
             else:
                 self.center = self.Position(x, self.Y_SIZE*(8) )
-            #print(f"{x} {y}")
+                self.x_map=x//self.X_SIZE -1
+                self.y_map=self.Y_SIZE*(8) //self.Y_SIZE -1
+            #print(f"{self.center.x} {self.center.y} { self.x_map} { self.y_map}")
             self.vertices = self.calculate_vertices(self.center)
 
         else:
+            #
             x, y = self.adjust_view_position_and_make_map_position(x, y)
             if self.isMoveOnlyX:
-
                 arrSameY = []
                 for card in self.allCards:
                     if card.center.y == self.center.y and not self.isSame(card):
@@ -103,48 +110,80 @@ class Card:
                 
                 arrSameY.sort(key=lambda card: card.center.x)
                 if len(arrSameY) == 0:
+                    self.x_map=x//self.X_SIZE -1
+                    self.y_map=self.center.y//self.Y_SIZE -1
                     self.center = self.Position(x, self.center.y)
 
                 elif len(arrSameY) == 1:
-                    if x < arrSameY[0].center.x:
-                        self.center = self.Position(x, self.center.y)
+                    if self.center.x < arrSameY[0].center.x:
+                        if x < arrSameY[0].center.x:
+                            self.center = self.Position(x, self.center.y)
+                            self.x_map=x//self.X_SIZE -1
+                            self.y_map=self.center.y//self.Y_SIZE -1
+                        else:
+                            self.center = self.Position(self.center.x, self.center.y)
+                            self.x_map=self.center.x//self.X_SIZE -1
+                            self.y_map=self.center.y//self.Y_SIZE -1
                     else:
-                        self.center = self.Position(arrSameY[0].center.x, self.center.y)
+                        if arrSameY[0].center.x < x:
+                            self.center = self.Position(x, self.center.y)
+                            self.x_map=x//self.X_SIZE -1
+                            self.y_map=self.center.y//self.Y_SIZE -1
+                        else:
+                            self.center = self.Position(self.center.x, self.center.y)
+                            self.x_map=self.center.x//self.X_SIZE -1
+                            self.y_map=self.center.y//self.Y_SIZE -1
                 else:
-                    
                     for i in range(len(arrSameY) - 1):
                         #print(f"{arrSameY[i].center.x} {arrSameY[i].num} {self.center.x } {x} {arrSameY[i+1].center.x} {arrSameY[i+1].num} ")
                         if arrSameY[i].center.x < self.center.x < arrSameY[i + 1].center.x:
                             if arrSameY[i].center.x < x < arrSameY[i + 1].center.x:
                                 self.center = self.Position(x, self.center.y)
+                                self.x_map=x//self.X_SIZE -1
+                                self.y_map=self.center.y//self.Y_SIZE -1
                             else:
                                 self.center = self.Position(self.center.x, self.center.y)
+                                self.x_map=self.center.x//self.X_SIZE -1
+                                self.y_map=self.center.y//self.Y_SIZE -1
                             break
-                        elif self.center.x  < arrSameY[i].center.x and i==0:
+                        elif (self.center.x  < arrSameY[i].center.x) and i==0:
                             if x  < arrSameY[i].center.x:
                                 self.center = self.Position(x, self.center.y)
+                                self.x_map=x//self.X_SIZE -1
+                                self.y_map=self.center.y//self.Y_SIZE -1
                             else:
                                 self.center = self.Position(self.center.x, self.center.y)
+                                self.x_map=self.center.x//self.X_SIZE -1
+                                self.y_map=self.center.y//self.Y_SIZE -1
                             break
-                        elif arrSameY[i + 1].center.x < self.center.x and i == (len(arrSameY) - 2):
+                        elif (arrSameY[i + 1].center.x < self.center.x) and i == (len(arrSameY) - 2):
                             if arrSameY[i + 1].center.x < x :
                                 self.center = self.Position(x, self.center.y)
+                                self.x_map=x//self.X_SIZE -1
+                                self.y_map=self.center.y//self.Y_SIZE -1
                             else:
                                 self.center = self.Position(self.center.x, self.center.y)
+                                self.x_map=self.center.x//self.X_SIZE -1
+                                self.y_map=self.center.y//self.Y_SIZE -1
                             break  
             else:
+                #初回
                 self.center = self.Position(x, y)
+                self.x_map=x//self.X_SIZE -1
+                self.y_map=y//self.Y_SIZE -1
             #print(f"{x} {y}")
 
             self.vertices = self.calculate_vertices(self.center)
 
+    #初期配置のみ
     def setPositionInitIdx(self, x, y):  # 0始まり
         self.set_position_common((x + 1) * self.X_SIZE, (y + 1) * self.Y_SIZE,True)
 
-
+    #マウス移動
     def setPosition(self, x, y):  # 0始まり
         self.set_position_common(x, y,False)
 
+    #特殊用途
     def setPositionIdx(self, x, y):  # 0始まり
         self.set_position_common((x + 1) * self.X_SIZE, (y + 1) * self.Y_SIZE ,False)
 
@@ -189,10 +228,7 @@ class Card:
 
         x = round(x / self.X_SIZE) * self.X_SIZE
         y = round(y / self.Y_SIZE) * self.Y_SIZE
-
-        self.x_map=x//self.X_SIZE -1
-        self.y_map=y//self.Y_SIZE -1
-        
+      
 
         #print(f"{self.x_map} { self.y_map}")
         return x, y
@@ -202,20 +238,32 @@ class Card:
     def update(self,allCard):
         if not self.isVisible:
             return 
+        self
+        #ddd=False
         self.allCards =allCard
         if self.isTouch() and pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
             self.hold=True
+            #xOld,yOld=self.getPosition()
+            #print(f"{xOld} {yOld}")
+            #ddd=True
         if pyxel.btnr(pyxel.MOUSE_BUTTON_LEFT) :
             self.hold=False
         if self.hold:
             xOld,yOld=self.getPosition()
+            #if yOld > self.Y_SIZE*(8) :
             self.setPosition( pyxel.mouse_x,pyxel.mouse_y )
             xAfter,yAfter=self.getPosition()
+            #self.count=self.count+1
+            #if self.count >30:
+            #    self.count=0
+            #if ddd:
+            #    print(f"{xOld} {yOld} -> {xAfter} {yAfter} {pyxel.mouse_x} {pyxel.mouse_y}")
             for card in self.allCards:
                 if not self.isSame(card):
                     x,y=card.getPosition()
                     if x==xAfter and y == yAfter:
                         self.setPositionIdx( xOld,yOld)
+                        #print("back")
                         break
 
         
@@ -252,7 +300,7 @@ class Card:
         if l==1:
             l=0
 
-        pyxel.rectb(self.vertices[0].x +1,self.vertices[0].y+1, self.X_SIZE-2, self.Y_SIZE-2, pyxel.COLOR_RED)
+        #pyxel.rectb(self.vertices[0].x +1,self.vertices[0].y+1, self.X_SIZE-2, self.Y_SIZE-2, pyxel.COLOR_RED)
         pyxel.rectb(self.vertices[0].x - self.width // 2+self.X_SIZE//2+1, self.vertices[0].y+1, self.width-2, self.height-2, pyxel.COLOR_BLACK)
         if self.flip_frame > 5:
             # 表面を描く
@@ -270,10 +318,16 @@ class Card:
         #print(f" {ret} {pyxel.mouse_x } {pyxel.mouse_y} { self.vertices[0].x  }  { self.vertices[1].x  }  { self.vertices[0].y  }  { self.vertices[2].y }")
         return ret
 
+#class StateMain:
+
 
 class Game:
     def __init__(self):
-
+        self.count=0
+        self.sec=0
+        self.frame_count = 0
+        self.start=False
+        self.viewStart=False
         pyxel.init(160, 256, title="algo Pyxel")
         self.allCard = []
         self.cards = [[None for _ in range(10)] for _ in range(9)]  # 9列10行の2次元配列を作成
@@ -281,8 +335,10 @@ class Game:
         self.create_cards()
         pyxel.mouse(True) #
         self.grid=False
-        self.drawCardBtn=Button(10,210,40,15,pyxel.COLOR_BLACK,"DARW",pyxel.COLOR_WHITE)
-        self.openBtn=Button(10,230,40,15,pyxel.COLOR_BLACK,"OPEN",pyxel.COLOR_WHITE)
+        self.drawCardBtn=Button(5,205,40,15,pyxel.COLOR_BLACK,"DARW",pyxel.COLOR_WHITE)
+        self.openBtn=Button(5,220,40,15,pyxel.COLOR_BLACK,"OPEN",pyxel.COLOR_WHITE)
+        self.newBtn=Button(5,235,40,10,pyxel.COLOR_BLACK,"NEW GAME",pyxel.COLOR_WHITE)
+        self.settingBtn=Button(5,245,40,10,pyxel.COLOR_BLACK,"SETTING",pyxel.COLOR_WHITE)
         #pyxel.load("tetris_resource.pyxres")
         self.draw_init_cards(8)
         pyxel.run(self.update, self.draw)
@@ -306,6 +362,15 @@ class Game:
         # カードをシャッフル
         random.shuffle(self.card_queue)
 
+    def isCardOpen(self,num,color):
+        for card in self.allCard:
+            refNum,refColor=card.getCardInfo()
+            if refNum==num and refColor==color:
+                if card.isOpend():
+                    return True
+                else:
+                    return False
+        return False
 
     def update(self):
         self.cards = [[None for _ in range(10)] for _ in range(9)] 
@@ -338,11 +403,18 @@ class Game:
                 else:
                     print("card exits")
 
-
+        self.frame_count += 1
         if self.openBtn.update():
             if self.openBtn.isOn:
                 for card in self.allCard:
-                    card.setisOpen(True)
+                    if self.cards[7][8]==None:
+                        if not self.start:
+                            self.start=True
+                            self.count=0
+                            self.sec=0
+                            self.frame_count=0
+                            self.viewStart=True
+                        card.setisOpen(True)
 
 
 
@@ -358,14 +430,8 @@ class Game:
     def draw(self):
         pyxel.cls(pyxel.COLOR_WHITE)
         if self.grid:
-            # 垂直方向の直線を描画
-            for x in range(0, 180, 16):
-                if 20 <x <160:
-                    pyxel.line(x-8, 12, x-8, 12+24*8, pyxel.COLOR_NAVY)
-            # 水平方向の直線を描画
-            for y in range(0, 270, 24):
-                if 20 < y <240:
-                    pyxel.line(24, y-12, 160-24, y-12, pyxel.COLOR_NAVY)
+            if self.cards[7][8]!=None:
+                pyxel.text(130,1,f"{self.cards[7][8].num}", pyxel.COLOR_BLACK)
 
         for card in self.allCard:
             card.draw()
@@ -373,6 +439,61 @@ class Game:
 
         self.drawCardBtn.draw()
         self.openBtn.draw()
+        self.newBtn.draw()
+        self.settingBtn.draw()
+
+
+        self.count=self.count+1
+        if self.count == 30:
+            self.count=0
+            self.sec=self.sec+1
+
+
+        if self.start:
+            strSec=f"{self.sec}"
+            secLen=len( strSec)*pyxel.FONT_WIDTH
+            pyxel.text(110-secLen,1,strSec, pyxel.COLOR_BLACK)
+            pyxel.text(110,1," sec", pyxel.COLOR_BLACK)
+
+            if self.viewStart:
+                # フレーム数に基づいて位置をランダムに変える
+                x = 10 + random.randint(-1, 1)
+                y = 2 + random.randint(-1, 1)
+
+                #fade_color = 7 - (self.frame_count // 10)  # 色を徐々に薄くする
+                #if fade_color < 0:
+                #    fade_color = 0  # 色が範囲外にならないようにする
+
+                pyxel.text(x, y, "start!!", pyxel.COLOR_BLACK)
+                if self.sec > 2:
+                    self.viewStart=False
+
+
+
+
+        x_offset=50
+        y_offset=235
+        line_offset=10
+        for num in range(12):
+            l=len( f"{num}")
+            if l==1:
+                l=2
+            else:
+                l=0
+            isExist=self.isCardOpen(num,pyxel.COLOR_BLACK)
+            if not isExist:
+                pyxel.rect(x_offset+num*9,y_offset, 8,8, pyxel.COLOR_BLACK)
+                pyxel.text(x_offset+num*9+l,y_offset+1,f"{num}", pyxel.COLOR_WHITE)
+
+            isExist=self.isCardOpen(num,pyxel.COLOR_WHITE)
+            if not isExist:
+                pyxel.rect(x_offset+num*9,y_offset + line_offset, 8,8, pyxel.COLOR_GRAY)
+                pyxel.text(x_offset+num*9+l,y_offset+1+line_offset,f"{num}", pyxel.COLOR_BLACK)
+
+
+        #text = f"{self.string}"
+        #text_width = pyxel.FONT_WIDTH * len(text)
+        #pyxel.text(self.x + (self.w/2 - text_width/2),self.y+self.h/2-3, self.string, self.string_color)
 
 
 Game()
