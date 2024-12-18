@@ -412,7 +412,7 @@ class Card:
 
 
 class StateMain:
-    def __init__(self,tateNum,zanki):
+    def __init__(self,tateNum,zanki,hint):
         self.nHaichi=tateNum
         self.count=0
         self.sec=0
@@ -425,18 +425,17 @@ class StateMain:
         self.grid=False
         self.done=False
         self.miss=False
+        self.missCount=0
         self.zanki=zanki
+        self.isHint = hint
         self.drawCardBtn=Button(5,205,40,15,pyxel.COLOR_BLACK,"DARW",pyxel.COLOR_WHITE)
         self.openBtn=Button(5,220,40,15,pyxel.COLOR_BLACK,"OPEN",pyxel.COLOR_WHITE)
         self.newBtn=Button(5,235,40,10,pyxel.COLOR_BLACK,"NEW GAME",pyxel.COLOR_WHITE)
         self.settingBtn=Button(5,245,40,10,pyxel.COLOR_BLACK,"SETTING",pyxel.COLOR_WHITE)
 
 
-        
-        self.yesBtn=Button(60,100,17,12,pyxel.COLOR_WHITE,"Yes",pyxel.COLOR_BLACK)
-        self.noBtn=Button(80,100,17,12,pyxel.COLOR_WHITE,"No",pyxel.COLOR_BLACK)
-
-        #pyxel.load("tetris_resource.pyxres")
+        self.newGameDialog=Dialog("Go Next Game?",self.dialog_newgame_yes,self.dialog_newgame_no)
+        self.settingDialog=Dialog("Go Setting?",self.dialog_newgame_yes,self.dialog_newgame_no)
         self.draw_init_cards(self.nHaichi)
         self.is_visible=False
         self.ng_card=None
@@ -444,7 +443,6 @@ class StateMain:
         self.isClear=False
         self.next_setting=False
         self.next_newgame=False
-        self.check_next=False
         self.score_manager = Score()
 
     def isVisible(self):
@@ -456,6 +454,13 @@ class StateMain:
         return self.next_setting
     def get_next_isNewGame(self):
         return self.next_newgame
+
+    def dialog_newgame_yes(self):
+        self.is_visible=False
+    def dialog_newgame_no(self):
+        self.next_setting=False
+        self.next_newgame=False
+
 
     def draw_init_cards(self,num):
         for i in range(num):  # キューから8枚取り出してリストに追加
@@ -469,8 +474,8 @@ class StateMain:
 
     def create_cards(self):
         # カードを生成し、キューに追加
-        #for num in range(12):
-        for num in range(7):
+        for num in range(12):
+        #for num in range(7):
             self.card_queue.append(Card(num, pyxel.COLOR_WHITE,self.nHaichi))
             self.card_queue.append(Card(num, pyxel.COLOR_BLACK,self.nHaichi))
         
@@ -599,6 +604,7 @@ class StateMain:
                     #print(f"check {ret}  {leng}")
                     if ret == False:
                         self.zanki= self.zanki-1
+                        self.missCount +=1
                         if self.zanki == 0:
                             self.miss=True
                         else:
@@ -608,23 +614,22 @@ class StateMain:
                     else:  
                         if leng == 0:
                             self.isClear=True
-                            score = (10 - self.nHaichi) * 1000 - self.sec
+                            score = (10 - self.nHaichi) * 1000 - self.sec -self.missCount*100
                             if score < 10:
                                 score = 10
-                            self.score_manager(score,self.nHaichi,self.sec)
+                            self.score_manager.set_score(score,self.nHaichi,self.sec,self.missCount)
 
     def update_newBtn(self):
         if self.newBtn.update():
             if self.newBtn.isOn:
-                self.check_next=True
+                self.newGameDialog.setisEnableDialog(True)
                 self.next_newgame=True
-                #self.is_visible=False
 
     def update_settingBtn(self):
         if self.settingBtn.update():
             if self.settingBtn.isOn:
+                self.settingDialog.setisEnableDialog(True)
                 self.next_setting=True
-                self.check_next=True
 
     def delete_card(self):
         if self.ng_card != None:
@@ -641,16 +646,13 @@ class StateMain:
         if not self.is_visible:
             return
 
-        if self.check_next:
-            if self.yesBtn.update():
-                if self.yesBtn.isOn:
-                    self.is_visible=False
-            if self.noBtn.update():
-                if self.noBtn.isOn:
-                    self.check_next=False
-                    self.next_setting=False
-                    self.next_newgame=False
+        self.newGameDialog.update()
+        if self.newGameDialog.isEnableDialog():
             return
+        self.settingDialog.update()
+        if self.settingDialog.isEnableDialog():
+            return
+
         self.cards = [[None for _ in range(10)] for _ in range(9)] 
 
 
@@ -662,6 +664,16 @@ class StateMain:
 
         if pyxel.btnp(pyxel.KEY_S):
             self.grid = not self.grid
+        if pyxel.btnp(pyxel.KEY_A):
+            score = (10 - self.nHaichi) * 1000 - self.sec - self.missCount*100
+            if score < 10:
+                score = 10
+            print(f"score {score} {self.nHaichi} {self.sec}")
+            self.score_manager.set_score(score,self.nHaichi,self.sec,self.missCount)
+        if pyxel.btnp(pyxel.KEY_W):
+            self.miss=True
+        if pyxel.btnp(pyxel.KEY_E):
+            self.isClear=True
 
 
         #配列
@@ -675,9 +687,6 @@ class StateMain:
         self.update_newBtn()
         self.update_settingBtn()
 
-        self.yesBtn.update()
-        self.noBtn.update()
-        
 
 
         self.delete_card()
@@ -722,10 +731,15 @@ class StateMain:
         pyxel.text(x, y, f"LIFE {self.zanki}", pyxel.COLOR_BLACK)
 
     def draw_gameover(self,x,y):
-        pyxel.text(x, y, f"Game Over", pyxel.COLOR_BLACK)
+        strClear = Str("Game Over", pyxel.COLOR_WHITE)
+        pyxel.rect(x-40, y, 80, 20, pyxel.COLOR_NAVY)
+        strClear.draw(x, y+7)
 
     def draw_gameclear(self,x,y):
-        pyxel.text(x, y, f"Game Clear!!", pyxel.COLOR_BLACK)
+        strClear = Str("Game Clear!!", pyxel.COLOR_BLACK)
+        pyxel.rect(x-40, y, 80, 20, pyxel.COLOR_LIGHT_BLUE)
+        strClear.draw(x, y+7)
+        #pyxel.text(x, y, f"Game Clear!!", pyxel.COLOR_BLACK)
 
     def draw(self):
         if not self.is_visible:
@@ -750,39 +764,31 @@ class StateMain:
             self.draw_time(110,1,self.sec)
             self.draw_zanki(50,1)
 
-            if self.viewStart and not self.check_next:
+            if self.viewStart and not self.newGameDialog.isEnableDialog() and not self.settingDialog.isEnableDialog():
                 self.draw_start(10,2)
                 if self.sec > 2:
                     self.viewStart=False
 
         if self.miss:
-            self.draw_gameover(100,100)
+            self.draw_gameover(80,100)
         if self.isClear:
-            self.draw_gameclear(100,100)
+            self.draw_gameclear(80,100)
 
-        self.draw_hint(50,235)
+        if self.isHint :
+            self.draw_hint(50,235)
 
-        if self.check_next:
-            if self.next_newgame:
-                strStr="Go Next Game?"
-            else:
-                strStr="Go Next Setting?"
-            length=len(strStr)
-            #pyxel.rect(30, 200, 80, 52,pyxel.COLOR_RED)
-            pyxel.rect(40, 80, 80, 42,pyxel.COLOR_RED)
-            pyxel.text(80-pyxel.FONT_WIDTH * length//2, 90, strStr, pyxel.COLOR_BLACK)
-            self.yesBtn.draw()
-            self.noBtn.draw()
-
+        self.newGameDialog.draw()
+        self.settingDialog.draw()
 
 class Dialog:
+    HEIGHT=100
     def __init__(self,inputStr,yesCbr,noCbr):
         self.s=inputStr
         self.yC=yesCbr
         self.nC=noCbr
         self.isVisble=False
-        self.yesBtn=Button(60,100,17,12,pyxel.COLOR_WHITE,"Yes",pyxel.COLOR_BLACK)
-        self.noBtn=Button(80,100,17,12,pyxel.COLOR_WHITE,"No",pyxel.COLOR_BLACK)
+        self.yesBtn=Button(60,self.HEIGHT+20,17,12,pyxel.COLOR_WHITE,"Yes",pyxel.COLOR_BLACK)
+        self.noBtn=Button(80,self.HEIGHT+20,17,12,pyxel.COLOR_WHITE,"No",pyxel.COLOR_BLACK)
 
 
     def setisEnableDialog(self,val):
@@ -793,29 +799,27 @@ class Dialog:
     def update(self):
         if not self.isVisble:
             return
-        self.yesBtn.update()
-        self.noBtn.update()
+
         if self.isVisble:
             if self.yesBtn.update():
                 if self.yesBtn.isOn:
                     self.yC()
+                    self.isVisble=False
             if self.noBtn.update():
                 if self.noBtn.isOn:
                     self.nC()
-
-
-
+                    self.isVisble=False
 
 
 
     def draw(self):
         if not self.isVisble:
             return
-        strStr=self.inputStr
+        strStr=self.s
         length=len(strStr)
         #pyxel.rect(30, 200, 80, 52,pyxel.COLOR_RED)
-        pyxel.rect(40, 80, 80, 42,pyxel.COLOR_RED)
-        pyxel.text(80-pyxel.FONT_WIDTH * length//2, 90, strStr, pyxel.COLOR_BLACK)
+        pyxel.rect(40, self.HEIGHT, 80, 42,pyxel.COLOR_RED)
+        pyxel.text(80-pyxel.FONT_WIDTH * length//2, self.HEIGHT+10, strStr, pyxel.COLOR_BLACK)
         self.yesBtn.draw()
         self.noBtn.draw()
 
@@ -830,7 +834,7 @@ class Str:
 
 class Score:
     def __init__(self):
-        self.scores = {'score': 0, 'nLine': 0, 'time': 0}
+        self.scores = {'score': 0, 'nLine': 0, 'time': 0, 'miss': 0}
         self.highscores = self.load_highscores()
         
     def load_highscores(self):
@@ -838,9 +842,10 @@ class Score:
             with open("highscores.bin", "rb") as file:
                 return [{'score': int.from_bytes(file.read(4), 'big'), 
                          'nLine': int.from_bytes(file.read(4), 'big'), 
-                         'time': int.from_bytes(file.read(4), 'big')} for _ in range(10)]
+                         'time': int.from_bytes(file.read(4), 'big'),
+                         'miss': int.from_bytes(file.read(4), 'big')} for _ in range(10)]
         except FileNotFoundError:
-            return [{'score': 0, 'nLine': 0, 'time': 0} for _ in range(10)]
+            return [{'score': 0, 'nLine': 0, 'time': 0, 'miss': 0} for _ in range(10)]
 
     def save_highscores(self):
         with open("highscores.bin", "wb") as file:
@@ -848,18 +853,25 @@ class Score:
                 file.write(hs['score'].to_bytes(4, 'big'))
                 file.write(hs['nLine'].to_bytes(4, 'big'))
                 file.write(hs['time'].to_bytes(4, 'big'))
+                file.write(hs['miss'].to_bytes(4, 'big'))
 
-    def set_score(self, new_score, new_nLine, new_time):
-        new_entry = {'score': new_score, 'nLine': new_nLine, 'time': new_time}
+    def set_score(self, new_score, new_nLine, new_time, new_miss):
+        new_entry = {'score': new_score, 'nLine': new_nLine, 'time': new_time, 'miss': new_miss}
         if new_entry['score'] > min(self.highscores, key=lambda x: x['score'])['score']:
             self.highscores.append(new_entry)
             self.highscores = sorted(self.highscores, key=lambda x: x['score'], reverse=True)[:10]
-            self.save_highscores()  # ハイスコアが更新された場合にファイルに書き出す
+            self.save_highscores()
 
     def clear_highscores(self):
-        self.highscores = [{'score': 0, 'nLine': 0, 'time': 0} for _ in range(10)]
+        self.highscores = [{'score': 0, 'nLine': 0, 'time': 0, 'miss': 0} for _ in range(10)]
         self.save_highscores()
-
+    
+    def display_highscores(self):
+        header = f"{'Rank':<5}{'Score':<10}{'Lines':<10}{'Time':<10}{'Miss':<10}"
+        print(header)
+        print("-" * len(header))
+        for i, hs in enumerate(self.highscores):
+            print(f"{i + 1:<5}{hs['score']:<10}{hs['nLine']:<10}{hs['time']:<10}{hs['miss']:<10}")
 
 
 class Game:
@@ -870,7 +882,8 @@ class Game:
         self.viewNo=1
         self.nLine=8
         self.zanki=3
-        self.algo=StateMain(self.nLine,self.zanki)
+        self.isHint=True
+        self.algo=StateMain(self.nLine,self.zanki,self.isHint)
         self.algo.setisVisible(True)
         self.tri1r = ButtonTri(130,30,8,pyxel.COLOR_BLACK,"right")
         self.tri1l = ButtonTri(100,30,8,pyxel.COLOR_BLACK,"left")
@@ -878,17 +891,26 @@ class Game:
         self.tri2r = ButtonTri(130,50,8,pyxel.COLOR_BLACK,"right")
         self.tri2l = ButtonTri(100,50,8,pyxel.COLOR_BLACK,"left")
 
+        self.tri3r = ButtonTri(130,70,8,pyxel.COLOR_BLACK,"right")
+        self.tri3l = ButtonTri(100,70,8,pyxel.COLOR_BLACK,"left")
+
+
         self.title=Str("Setting", pyxel.COLOR_BLACK)
         self.score=Str("Highscores", pyxel.COLOR_BLACK)
         self.setting1=Str("Initial Card Count", pyxel.COLOR_BLACK)
         self.setting2=Str("Life", pyxel.COLOR_BLACK)
+        self.setting3=Str("Hint", pyxel.COLOR_BLACK)
 
         self.newBtn=Button(60,90,40,20,pyxel.COLOR_BLACK,"NEW GAME",pyxel.COLOR_WHITE)
+        self.deleteBtn=Button(60,230,40,20,pyxel.COLOR_BLACK,"DELETE",pyxel.COLOR_WHITE)
+        self.scoreDialog=Dialog("Detete?",self.dialog_newgame_yes,self.dialog_newgame_no)
         self.score_manager=None
         pyxel.run(self.update, self.draw)
         
-        
-
+    def dialog_newgame_yes(self):
+        self.score_manager.clear_highscores()
+    def dialog_newgame_no(self):
+        pass
     def update(self):
 
         if pyxel.btnp(pyxel.KEY_Q):
@@ -902,7 +924,7 @@ class Game:
                     if self.score_manager != None:
                         del(self.score_manager)
                         self.score_manager=None
-                    self.algo=StateMain(self.nLine,self.zanki)
+                    self.algo=StateMain(self.nLine,self.zanki,self.isHint)
                     self.algo.setisVisible(True)
 
                 elif self.algo.get_next_isSetting(): 
@@ -910,14 +932,20 @@ class Game:
                     self.viewNo=2
                     self.score_manager = Score()
         elif self.viewNo==2:
+            self.scoreDialog.update()
+            #if self.scoreDialog.isEnableDialog():
+            #    return
             if self.newBtn.update():
                 if self.newBtn.isOn:
                     self.viewNo=1
                     if self.score_manager != None:
                         del(self.score_manager)
                         self.score_manager=None
-                    self.algo=StateMain(self.nLine,self.zanki)
+                    self.algo=StateMain(self.nLine,self.zanki,self.isHint)
                     self.algo.setisVisible(True)
+            if self.deleteBtn.update():
+                if self.deleteBtn.isOn:
+                    self.scoreDialog.setisEnableDialog(True)
             if self.tri1r.update():
                 if self.tri1r.isOn:
                     if self.nLine < 8:
@@ -928,13 +956,18 @@ class Game:
                         self.nLine -= 1
             if self.tri2r.update():
                 if self.tri2r.isOn:
-                    if self.zanki < 5:
+                    if self.zanki < 9:
                         self.zanki += 1
             if self.tri2l.update():
                  if self.tri2l.isOn:
                     if self.zanki >1:
                         self.zanki -= 1
-
+            if self.tri3r.update():
+                if self.tri3r.isOn:
+                    self.isHint = True
+            if self.tri3l.update():
+                 if self.tri3l.isOn:
+                    self.isHint = False
     def draw(self):
         pyxel.cls(pyxel.COLOR_WHITE)
         if self.viewNo==1:
@@ -943,18 +976,26 @@ class Game:
             self.title.draw(80,10)
             self.setting1.draw(40,30)
             self.setting2.draw(40,50)
+            self.setting3.draw(40,70)
             self.tri1r.draw()
             self.tri1l.draw()
             self.tri2r.draw()
             self.tri2l.draw()
+            self.tri3r.draw()
+            self.tri3l.draw()
+            self.deleteBtn.draw()
             pyxel.text(115-1, 30-2, f"{self.nLine}", pyxel.COLOR_BLACK)
             pyxel.text(115-1, 50-2, f"{self.zanki}", pyxel.COLOR_BLACK)
+            if self.isHint:
+                pyxel.text(115-1*pyxel.FONT_WIDTH, 70-2, f"Yes", pyxel.COLOR_BLACK)
+            else:
+                pyxel.text(115-1*pyxel.FONT_WIDTH, 70-2, f"No", pyxel.COLOR_BLACK)
             self.newBtn.draw()
 
-            self.score.draw(80,130)
+            self.score.draw(80,117)
             for i, hs in enumerate(self.score_manager.highscores):
-                pyxel.text(10, 140 + i * 10, f"{i + 1:<5}{hs['score']:<10}{hs['nLine']:<10}{hs['time']:<10}",pyxel.COLOR_BLACK)
-
+                pyxel.text(10, 130 + i * 10, f"{i + 1:>3}: {hs['score']:>5}pt {hs['nLine']:>1}cnt {hs['time']:>7}sec {hs['miss']:>1}miss",pyxel.COLOR_BLACK)
+            self.scoreDialog.draw()
 
 
 
