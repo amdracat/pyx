@@ -881,7 +881,7 @@ class Game:
     def __init__(self):
 
         pyxel.init(160, 256, title="algo Pyxel")
-        pyxel.mouse(True) #
+        #pyxel.mouse(True) #
         self.viewNo=1
         self.nLine=8
         self.zanki=3
