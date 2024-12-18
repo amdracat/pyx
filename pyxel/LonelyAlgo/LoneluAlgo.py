@@ -3,6 +3,8 @@ import copy
 import random
 from collections import deque
 import math
+import os
+
 class ButtonTri:
     def __init__(self,x,y,size,color,direction):
         self.color=color
@@ -870,15 +872,24 @@ class Str:
     def draw(self,x,y):
         pyxel.text(x-self.lengthOffset, y, self.s, self.c)
 
+import pyxel
+import os
 
 class Score:
     def __init__(self):
         self.scores = {'score': 0, 'nLine': 0, 'time': 0, 'miss': 0}
+        self.vendor_name = "tmp"
+        self.app_name = "lonal"
         self.highscores = self.load_highscores()
         
+    def get_user_data_dir(self):
+        return pyxel.user_data_dir(self.vendor_name, self.app_name)
+
     def load_highscores(self):
+        user_data_dir = self.get_user_data_dir()
+        filepath = os.path.join(user_data_dir, "highscores.bin")
         try:
-            with open("highscores.bin", "rb") as file:
+            with open(filepath, "rb") as file:
                 return [{'score': int.from_bytes(file.read(4), 'big'), 
                          'nLine': int.from_bytes(file.read(4), 'big'), 
                          'time': int.from_bytes(file.read(4), 'big'),
@@ -887,7 +898,10 @@ class Score:
             return [{'score': 0, 'nLine': 0, 'time': 0, 'miss': 0} for _ in range(10)]
 
     def save_highscores(self):
-        with open("highscores.bin", "wb") as file:
+        user_data_dir = self.get_user_data_dir()
+        os.makedirs(user_data_dir, exist_ok=True)
+        filepath = os.path.join(user_data_dir, "highscores.bin")
+        with open(filepath, "wb") as file:
             for hs in self.highscores:
                 file.write(hs['score'].to_bytes(4, 'big'))
                 file.write(hs['nLine'].to_bytes(4, 'big'))
