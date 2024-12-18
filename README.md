@@ -12,3 +12,4 @@ https://kitao.github.io/pyxel/wasm/launcher/?play=amdracat.pyx.pyxel.tetris
 $ pyxel package ./LonelyAlgo ./LonelyAlgo/LoneluAlgo.py
 $ pyxel app2html ./LonelyAlgo.pyxapp
 
+https://amdracat.github.io/pyx.pyxel
