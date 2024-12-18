@@ -881,28 +881,32 @@ class Game:
     def __init__(self):
 
         pyxel.init(160, 256, title="algo Pyxel")
-        #pyxel.mouse(True) #
+        pyxel.mouse(True) #
         self.viewNo=1
         self.nLine=8
         self.zanki=3
         self.isHint=True
+        self.isMouse=True
         self.algo=StateMain(self.nLine,self.zanki,self.isHint)
         self.algo.setisVisible(True)
-        self.tri1r = ButtonTri(130,30,8,pyxel.COLOR_BLACK,"right")
-        self.tri1l = ButtonTri(100,30,8,pyxel.COLOR_BLACK,"left")
+        self.tri1r = ButtonTri(130,24+17*0+4,8,pyxel.COLOR_BLACK,"right")
+        self.tri1l = ButtonTri(100,24+17*0+4,8,pyxel.COLOR_BLACK,"left")
 
-        self.tri2r = ButtonTri(130,50,8,pyxel.COLOR_BLACK,"right")
-        self.tri2l = ButtonTri(100,50,8,pyxel.COLOR_BLACK,"left")
+        self.tri2r = ButtonTri(130,24+17*1+4,8,pyxel.COLOR_BLACK,"right")
+        self.tri2l = ButtonTri(100,24+17*1+4,8,pyxel.COLOR_BLACK,"left")
 
-        self.tri3r = ButtonTri(130,70,8,pyxel.COLOR_BLACK,"right")
-        self.tri3l = ButtonTri(100,70,8,pyxel.COLOR_BLACK,"left")
+        self.tri3r = ButtonTri(130,24+17*2+4,8,pyxel.COLOR_BLACK,"right")
+        self.tri3l = ButtonTri(100,24+17*2+4,8,pyxel.COLOR_BLACK,"left")
 
+        self.tri4r = ButtonTri(130,24+17*3+4,8,pyxel.COLOR_BLACK,"right")
+        self.tri4l = ButtonTri(100,24+17*3+4,8,pyxel.COLOR_BLACK,"left")
 
         self.title=Str("Setting", pyxel.COLOR_BLACK)
         self.score=Str("Highscores", pyxel.COLOR_BLACK)
         self.setting1=Str("Initial Card Count", pyxel.COLOR_BLACK)
         self.setting2=Str("Life", pyxel.COLOR_BLACK)
         self.setting3=Str("Hint", pyxel.COLOR_BLACK)
+        self.setting4=Str("Mouse", pyxel.COLOR_BLACK)
 
         self.newBtn=Button(60,90,40,20,pyxel.COLOR_BLACK,"NEW GAME",pyxel.COLOR_WHITE)
         self.deleteBtn=Button(60,230,40,20,pyxel.COLOR_BLACK,"DELETE",pyxel.COLOR_WHITE)
@@ -971,28 +975,47 @@ class Game:
             if self.tri3l.update():
                  if self.tri3l.isOn:
                     self.isHint = False
+            if self.tri4r.update():
+                if self.tri4r.isOn:
+                    self.isMouse = True
+                    pyxel.mouse(self.isMouse )
+            if self.tri4l.update():
+                 if self.tri4l.isOn:
+                    self.isMouse = False
+                    pyxel.mouse(self.isMouse )
+
+
     def draw(self):
         pyxel.cls(pyxel.COLOR_WHITE)
         if self.viewNo==1:
             self.algo.draw()
         elif self.viewNo==2:
-            self.title.draw(80,10)
-            self.setting1.draw(40,30)
-            self.setting2.draw(40,50)
-            self.setting3.draw(40,70)
+            self.title.draw(80,7)
+            self.setting1.draw(40,24)
+            self.setting2.draw(40,24+17)
+            self.setting3.draw(40,24+17*2)
+            self.setting4.draw(40,24+17*3)
             self.tri1r.draw()
             self.tri1l.draw()
             self.tri2r.draw()
             self.tri2l.draw()
             self.tri3r.draw()
             self.tri3l.draw()
+            self.tri4r.draw()
+            self.tri4l.draw()
             self.deleteBtn.draw()
-            pyxel.text(115-1, 30-2, f"{self.nLine}", pyxel.COLOR_BLACK)
-            pyxel.text(115-1, 50-2, f"{self.zanki}", pyxel.COLOR_BLACK)
+            pyxel.text(115-1, 24+2, f"{self.nLine}", pyxel.COLOR_BLACK)
+            pyxel.text(115-1, 24+17+2, f"{self.zanki}", pyxel.COLOR_BLACK)
             if self.isHint:
-                pyxel.text(115-1*pyxel.FONT_WIDTH, 70-2, f"Yes", pyxel.COLOR_BLACK)
+                pyxel.text(115-1*pyxel.FONT_WIDTH, 24+17*2+2, f"Yes", pyxel.COLOR_BLACK)
             else:
-                pyxel.text(115-1*pyxel.FONT_WIDTH, 70-2, f"No", pyxel.COLOR_BLACK)
+                pyxel.text(115-1*pyxel.FONT_WIDTH, 24+17*2+2, f"No", pyxel.COLOR_BLACK)
+
+            if self.isMouse:
+                pyxel.text(115-1*pyxel.FONT_WIDTH, 24+17*3+2, f"Yes", pyxel.COLOR_BLACK)
+            else:
+                pyxel.text(115-1*pyxel.FONT_WIDTH, 24+17*3+2, f"No", pyxel.COLOR_BLACK)
+
             self.newBtn.draw()
 
             self.score.draw(80,117)
