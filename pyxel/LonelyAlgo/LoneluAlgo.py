@@ -428,10 +428,11 @@ class StateMain:
         self.missCount=0
         self.zanki=zanki
         self.isHint = hint
-        self.drawCardBtn=Button(5,205,40,15,pyxel.COLOR_BLACK,"DARW",pyxel.COLOR_WHITE)
-        self.openBtn=Button(5,220,40,15,pyxel.COLOR_BLACK,"OPEN",pyxel.COLOR_WHITE)
-        self.newBtn=Button(5,235,40,10,pyxel.COLOR_BLACK,"NEW GAME",pyxel.COLOR_WHITE)
-        self.settingBtn=Button(5,245,40,10,pyxel.COLOR_BLACK,"SETTING",pyxel.COLOR_WHITE)
+        self.waitFirstOpen=True
+        #self.drawCardBtn=Button(5,205,40,15,pyxel.COLOR_BLACK,"DARW",pyxel.COLOR_WHITE)
+        self.openBtn=Button(5,205,40,20,pyxel.COLOR_BLACK,"OPEN",pyxel.COLOR_WHITE)
+        self.newBtn=Button(5,205+20,40,15,pyxel.COLOR_GRAY,"NEW GAME",pyxel.COLOR_BLACK)
+        self.settingBtn=Button(5,205+20+15,40,15,pyxel.COLOR_GRAY,"SETTING",pyxel.COLOR_BLACK)
 
 
         self.newGameDialog=Dialog("Go Next Game?",self.dialog_newgame_yes,self.dialog_newgame_no)
@@ -490,6 +491,12 @@ class StateMain:
                     return True
                 else:
                     return False
+        return False
+
+    def isNotOpenCardExist(self):
+        for card in self.allCard:
+            if not card.isOpend():
+                return True
         return False
 
 
@@ -577,26 +584,32 @@ class StateMain:
             if self.cards[x][y] is not None:
                 count += 1
         return count
-                            
-    def update_drawBtn(self):
-        if self.drawCardBtn.update():
-            if self.drawCardBtn.isOn and not self.miss:
-                isDraw=True
-                for card in self.allCard:
-                    if not card.isOpend():
-                        isDraw=False
+    
+    def drawCard(self):
+        if  not self.miss:
+            isDraw=True
+            for card in self.allCard:
+                if not card.isOpend():
+                    isDraw=False
+            #print(f"len:{len(self.card_queue)}")
+            if self.cards[7][8]==None and isDraw:
+                if self.card_queue:
+                    card=self.card_queue.popleft()
+                    card.setPositionInitIdx(7,8)
+                    card.setVisible(True)
+                    self.allCard.append(card)
 
-                #print(f"len:{len(self.card_queue)}")
-                if self.cards[7][8]==None and isDraw:
-                    if self.card_queue:
-                        card=self.card_queue.popleft()
-                        card.setPositionInitIdx(7,8)
-                        card.setVisible(True)
-                        self.allCard.append(card)
+
+
+    #def update_drawBtn(self):
+    #    if self.drawCardBtn.update():
+    #        if self.drawCardBtn.isOn and not self.miss:
+    #            self.drawCard()
 
     def update_openBtn(self):
         if self.openBtn.update():
             if self.openBtn.isOn and not self.miss:
+                self.waitFirstOpen=False
                 opencard = self.openCard()
                 if opencard != None:
                     ret = self.checkGame()
@@ -618,11 +631,16 @@ class StateMain:
                             if score < 10:
                                 score = 10
                             self.score_manager.set_score(score,self.nHaichi,self.sec,self.missCount)
+                        else:
+                            self.drawCard()
 
     def update_newBtn(self):
         if self.newBtn.update():
             if self.newBtn.isOn:
-                self.newGameDialog.setisEnableDialog(True)
+                if not self.isClear and not self.miss:
+                    self.newGameDialog.setisEnableDialog(True)
+                else:
+                    self.dialog_newgame_yes()
                 self.next_newgame=True
 
     def update_settingBtn(self):
@@ -641,6 +659,7 @@ class StateMain:
                 self.allCard.remove(self.ng_card)
                 del(self.ng_card)
                 self.ng_card=None
+                self.drawCard()
 
     def update(self):
         if not self.is_visible:
@@ -663,7 +682,7 @@ class StateMain:
                 self.sec=self.sec+1
 
         #デバッグイベント
-        """
+        
         if pyxel.btnp(pyxel.KEY_S):
             self.grid = not self.grid
         if pyxel.btnp(pyxel.KEY_A):
@@ -676,7 +695,7 @@ class StateMain:
             self.miss=True
         if pyxel.btnp(pyxel.KEY_E):
             self.isClear=True
-        """
+        
 
 
         #配列
@@ -685,7 +704,7 @@ class StateMain:
             x,y=card.getPosition()
             self.cards[x][y]=card
 
-        self.update_drawBtn()
+        #self.update_drawBtn()
         self.update_openBtn()
         self.update_newBtn()
         self.update_settingBtn()
@@ -731,7 +750,10 @@ class StateMain:
         pyxel.text(x_tmp, y_tmp, "start!!", pyxel.COLOR_BLACK)
 
     def draw_zanki(self,x,y):
-        pyxel.text(x, y, f"LIFE {self.zanki}", pyxel.COLOR_BLACK)
+        #pyxel.text(x, y, f"LIFE {self.zanki}", pyxel.COLOR_BLACK)
+        pyxel.text(x, y, f"LIFE", pyxel.COLOR_BLACK)
+        for i in range(self.zanki):
+            self.draw_filled_heart(x+4*pyxel.FONT_WIDTH+3 + i*6, y+2, 5, pyxel.COLOR_RED)
 
     def draw_gameover(self,x,y):
         strClear = Str("Game Over", pyxel.COLOR_WHITE)
@@ -744,31 +766,43 @@ class StateMain:
         strClear.draw(x, y+7)
         #pyxel.text(x, y, f"Game Clear!!", pyxel.COLOR_BLACK)
 
+
+    def draw_filled_heart(self,x, y, size, color):
+        # ハートの上部を描く（2つの円）
+        pyxel.circ(x - size//4, y - size//4, size//4, color)
+        pyxel.circ(x + size//4, y - size//4, size//4, color)
+        
+        # ハートの下部を描く（四角形と三角形）
+        pyxel.tri(x - size//2, y - size//8, x + size//2, y - size//8, x, y + size//2, color)
+        pyxel.rect(x - size//2, y - size//4, size, size//4, color)
+
+
     def draw(self):
+        
         if not self.is_visible:
             return
     
         if self.grid:
             if self.cards[7][8]!=None:
-                pyxel.text(130,1,f"{self.cards[7][8].num}", pyxel.COLOR_BLACK)
+                pyxel.text(130,10,f"{self.cards[7][8].num}", pyxel.COLOR_BLACK)
 
 
 
         for card in self.allCard:
             card.draw()
 
-        self.drawCardBtn.draw()
+        #self.drawCardBtn.draw()
         self.openBtn.draw()
         self.newBtn.draw()
         self.settingBtn.draw()
         
 
         if self.start:
-            self.draw_time(110,1,self.sec)
-            self.draw_zanki(50,1)
+            self.draw_time(140,1,self.sec)
+            self.draw_zanki(5,1)
 
             if self.viewStart and not self.newGameDialog.isEnableDialog() and not self.settingDialog.isEnableDialog():
-                self.draw_start(10,2)
+                self.draw_start(10,20)
                 if self.sec > 2:
                     self.viewStart=False
 
@@ -782,6 +816,8 @@ class StateMain:
 
         self.newGameDialog.draw()
         self.settingDialog.draw()
+        if self.waitFirstOpen:
+            pyxel.rectb(5,205,40,20, pyxel.frame_count % 16)
 
 class Dialog:
     HEIGHT=100
