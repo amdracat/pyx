@@ -662,6 +662,8 @@ class StateMain:
             if not self.miss and not self.isClear:
                 self.sec=self.sec+1
 
+        #デバッグイベント
+        """
         if pyxel.btnp(pyxel.KEY_S):
             self.grid = not self.grid
         if pyxel.btnp(pyxel.KEY_A):
@@ -674,6 +676,7 @@ class StateMain:
             self.miss=True
         if pyxel.btnp(pyxel.KEY_E):
             self.isClear=True
+        """
 
 
         #配列
