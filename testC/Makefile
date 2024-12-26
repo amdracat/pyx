@@ -13,7 +13,7 @@ OBJ = $(SRC:.c=.o)
 TARGET = test_program
 
 # デフォルトターゲット
-all: $(TARGET) coverage
+all: $(TARGET)
 
 # 実行ファイルのビルドルール
 $(TARGET): $(OBJ)
@@ -28,10 +28,14 @@ coverage: $(TARGET)
 	./$(TARGET)
 	lcov --capture --directory . --output-file coverage.info
 	genhtml coverage.info --output-directory coverage_report
+	$(MAKE) clean_coverage
 
 # クリーンアップルール
 clean:
 	rm -f $(OBJ) $(TARGET) *.gcda *.gcno *.gcov coverage.info
 	rm -rf coverage_report
 
-.PHONY: all clean coverage
+clean_coverage:
+	rm -f *.gcda *.gcno *.gcov coverage.info
+
+.PHONY: all clean coverage clean_coverage

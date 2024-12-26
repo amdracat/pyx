@@ -3,22 +3,28 @@
 # lcovとgenhtmlが存在するディレクトリをパスに追加
 export PATH=$PATH:/c/ProgramData/chocolatey/lib/lcov/tools/bin
 
-# クリーン
-make clean
+# クリーンアップ関数
+clean_all() {
+    make clean
+    echo "全てのビルドファイルとカバレッジファイルが削除されました。"
+}
 
-# ビルド
-make
+# 引数のチェック
+if [ "$1" = "-clean" ]; then
+    clean_all
+elif [ "$1" = "-all" ]; then
+    # クリーン
+    make clean
 
-# テストプログラムの実行
-./test_program
+    # ビルド
+    make
 
-# 引数が渡された場合はカバレッジ情報を取得
-if [ $# -gt 0 ]; then
+    # テストプログラムの実行
+    ./test_program
+
+    # カバレッジ情報の収集とレポート生成
     echo "カバレッジ情報を取得中..."
-    # カバレッジ情報の収集
     lcov --capture --directory . --output-file coverage.info
-
-    # カバレッジレポートの生成
     genhtml coverage.info --output-directory coverage_report
 
     # カバレッジレポートの生成が成功した場合のメッセージ
@@ -28,5 +34,9 @@ if [ $# -gt 0 ]; then
         echo "カバレッジレポートの生成に失敗しました。"
     fi
 else
+    # デフォルトの動作（カバレッジなしのテスト実行）
+    make clean
+    make
+    ./test_program
     echo "カバレッジ情報は取得されませんでした。"
 fi
