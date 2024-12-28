@@ -4,3 +4,4 @@ testC/*/*.exe
 highscores.bin
 *.o
 *.exe
+Log.txt
