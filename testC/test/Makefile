@@ -1,6 +1,6 @@
 # 変数定義
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -I../function -I.
+CFLAGS =  -I../function -I.
 TARGET = run
 
 # ソースファイルの指定

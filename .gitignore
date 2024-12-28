@@ -2,3 +2,5 @@ testC/*/*.o
 testC/*/*.exe
 *.pyc
 highscores.bin
+*.o
+*.exe
