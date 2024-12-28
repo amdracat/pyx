@@ -2,3 +2,7 @@ testC/*/*.o
 testC/*/*.exe
 *.pyc
 highscores.bin
+*.o
+*.exe
+Log.txt
+assert_log.txt
