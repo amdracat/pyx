@@ -2,9 +2,9 @@
 
 # Compiler and flags
 CXX = C:/mingw32/bin/g++  # 明示的に旧リポジトリのMinGWパスを指定
-INCLUDES = -I./include -I./include/test_framework -I./include/mem_allocator -I./include/data_structures -I./include/dx
+INCLUDES = -I./include -I./include/test_framework -I./include/mem_allocator -I./include/data_structures -I./include/dx -I./include/system
 CXXFLAGS = $(INCLUDES) -DDX_GCC_COMPILE
-LDFLAGS = -L./lib -lDxLib -lDxUseCLib -lDxDrawFunc -ljpeg -lpng -lzlib -ltiff -ltheora_static -lvorbis_static -lvorbisfile_static -logg_static -lbulletdynamics -lbulletcollision -lbulletmath -lopusfile -lopus -lsilk_common -lcelt -lm -lstdc++
+LDFLAGS = -L./lib -lDxLib -lDxUseCLib -lDxDrawFunc -ljpeg -lpng -lzlib -ltiff -ltheora_static -lvorbis_static -lvorbisfile_static -logg_static -lbulletdynamics -lbulletcollision -lbulletmath -lopusfile -lopus -lsilk_common -lcelt -lm -lstdc++ -lpthread
 
 SRCDIR = ./src
 TESTDIR = ./test
